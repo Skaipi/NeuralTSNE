@@ -1,3 +1,17 @@
-# import importlib.metadata
+import importlib as _importlib
 
-__version__ = "0.1.0"
+__version__ = "0.1.0-dev8"
+
+submodules = ["TSNE", "DatasetLoader", "Plotter", "MnistPlotter"]
+
+__all__ = submodules + ["__version__"]
+
+
+def __dir__():
+    return __all__
+
+
+def __getattr__(name):
+    if name in submodules:
+        return _importlib.import_module(f"NeuralTSNE.{name}")
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

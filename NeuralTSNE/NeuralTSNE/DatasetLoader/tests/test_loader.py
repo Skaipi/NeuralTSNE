@@ -1,8 +1,10 @@
-from unittest.mock import patch, MagicMock, call
-import pytest
-from NeuralTSNE.DatasetLoader import get_datasets as loader
-from parameterized import parameterized
 import itertools
+from unittest.mock import MagicMock, call, patch
+
+import pytest
+from parameterized import parameterized
+
+from NeuralTSNE.DatasetLoader import get_datasets as loader
 
 
 @patch("torchvision.datasets.MNIST")
@@ -81,3 +83,25 @@ def test_prepare_dataset(
                         call("mocked test", dataset + "_test.data"),
                     ]
                 )
+
+
+@parameterized.expand(itertools.product(["mnist"], [True, False]))
+@patch("NeuralTSNE.DatasetLoader.get_datasets.prepare_dataset")
+@patch("NeuralTSNE.DatasetLoader.get_datasets._get_available_datasets")
+def test_get_dataset(
+    dataset: str, is_available: bool, mock_available: MagicMock, mock_prepare: MagicMock
+):
+    if not is_available:
+        mock_available.return_value = []
+    else:
+        mock_available.return_value = [dataset]
+        mock_prepare.return_value = ("mocked train", "mocked test")
+
+    returned = loader.get_dataset(dataset)
+
+    if not is_available:
+        mock_prepare.assert_not_called()
+        assert returned == (None, None)
+    else:
+        mock_prepare.assert_called_once_with(dataset)
+        assert returned == ("mocked train", "mocked test")

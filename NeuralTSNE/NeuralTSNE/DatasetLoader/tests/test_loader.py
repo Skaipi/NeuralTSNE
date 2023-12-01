@@ -1,8 +1,6 @@
-import itertools
 from unittest.mock import MagicMock, call, patch
 
 import pytest
-from parameterized import parameterized
 
 from NeuralTSNE.DatasetLoader import get_datasets as loader
 
@@ -34,21 +32,19 @@ def test_get_available_datasets():
     assert loader._get_available_datasets() == available_datasets
 
 
-@parameterized.expand(
-    itertools.product(
-        ["mnist", "fashion_mnist", "abcdef"], [True, False], [True, False]
-    )
-)
+@pytest.mark.parametrize("dataset", ["mnist", "fashion_mnist", "abcdef"])
+@pytest.mark.parametrize("train_exists", [True, False])
+@pytest.mark.parametrize("test_exists", [True, False])
 @patch("torch.load")
 @patch("torch.save")
 @patch("NeuralTSNE.DatasetLoader.get_datasets.os.path.exists")
 def test_prepare_dataset(
-    dataset: str,
-    train_exists: bool,
-    test_exists: bool,
     mock_exists: MagicMock,
     mock_save: MagicMock,
     mock_load: MagicMock,
+    dataset: str,
+    train_exists: bool,
+    test_exists: bool,
 ):
     mock_exists.side_effect = [train_exists, test_exists]
     if train_exists and test_exists:
@@ -85,11 +81,12 @@ def test_prepare_dataset(
                 )
 
 
-@parameterized.expand(itertools.product(["mnist"], [True, False]))
+@pytest.mark.parametrize("dataset", ["mnist"])
+@pytest.mark.parametrize("is_available", [True, False])
 @patch("NeuralTSNE.DatasetLoader.get_datasets.prepare_dataset")
 @patch("NeuralTSNE.DatasetLoader.get_datasets._get_available_datasets")
 def test_get_dataset(
-    dataset: str, is_available: bool, mock_available: MagicMock, mock_prepare: MagicMock
+    mock_available: MagicMock, mock_prepare: MagicMock, dataset: str, is_available: bool
 ):
     if not is_available:
         mock_available.return_value = []

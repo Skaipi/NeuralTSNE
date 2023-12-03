@@ -10,6 +10,9 @@ import NeuralTSNE.Plotter as plotter
 @pytest.mark.parametrize("are_neural_labels", [True, False])
 @pytest.mark.parametrize("file_step", [None, 2])
 @pytest.mark.parametrize("step", [1, 3])
+@patch("matplotlib.pyplot.subplots")
+@patch("matplotlib.pyplot.xlabel")
+@patch("matplotlib.pyplot.ylabel")
 @patch("matplotlib.pyplot.scatter")
 @patch("matplotlib.pyplot.savefig")
 @patch("matplotlib.pyplot.show")
@@ -17,11 +20,15 @@ def test_plot(
     mock_plt_show: MagicMock,
     mock_plt_savefig: MagicMock,
     mock_plt_scatter: MagicMock,
+    mock_plt_ylabel: MagicMock,
+    mock_plt_xlabel: MagicMock,
+    mock_plt_subplots: MagicMock,
     step: int,
     file_step: int | None,
     are_neural_labels: bool,
 ):
     img_file = "test.png"
+    mock_plt_subplots.return_value = (None, None)
     plotter.plot(
         np.array([[1, 2], [3, 4], [5, 6], [7, 8]]),
         np.array([1, 2, 3, 4]),
@@ -36,6 +43,9 @@ def test_plot(
     mock_plt_scatter.assert_called_once()
     mock_plt_savefig.assert_called_once_with(img_file)
     mock_plt_show.assert_called_once()
+    mock_plt_xlabel.assert_called_once()
+    mock_plt_ylabel.assert_called_once()
+    mock_plt_subplots.assert_called_once()
 
 
 @pytest.mark.parametrize("input_file", ["test_data.txt"])

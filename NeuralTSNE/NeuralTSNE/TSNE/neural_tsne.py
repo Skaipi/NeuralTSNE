@@ -100,7 +100,7 @@ def load_text_file(
         input_file.readline()
     if exclude_cols:
         last_pos = input_file.tell()
-        ncols = len(input_file.readline().strip().split(" "))
+        ncols = len(input_file.readline().strip().split())
         input_file.seek(last_pos)
         cols = np.arange(0, ncols, 1)
         cols = tuple(np.delete(cols, exclude_cols))
@@ -121,9 +121,10 @@ def load_npy_file(
     exclude_cols: List[int],
     variance_threshold: float,
 ) -> torch.Tensor:
-    name = input_file.name
+    # name = input_file.name
+    # input_file.close()
+    data = np.load(input_file)
     input_file.close()
-    data = np.load(name)
     data = data[::step, :]
     if exclude_cols:
         data = np.delete(data, exclude_cols, axis=1)

@@ -70,7 +70,63 @@ def test_filter_data_by_variance(data_variance, variance_threshold, filtered_dat
     assert torch.allclose(result, filtered_data)
 
 
-# TODO: Add test for save_means_and_vars
+@pytest.mark.parametrize(
+    "data, filtered_data",
+    [
+        (
+            [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]],
+            [[1.0, 2.0], [4.0, 5.0], [7.0, 8.0]],
+        ),
+        (
+            [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]],
+            [[1.0, 3.0], [4.0, 6.0], [7.0, 9.0]],
+        ),
+        ([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]], None),
+    ],
+)
+@patch("builtins.open", new_callable=mock_open)
+def test_save_means_and_vars(
+    mock_open: MagicMock,
+    data: List[List[float]],
+    filtered_data: List[List[float]] | None,
+):
+    file_handle = PersistentStringIO()
+    mock_open.return_value = file_handle
+
+    data_means = np.mean(data, axis=0)
+    data_vars = np.var(data, axis=0, ddof=1)
+
+    filtered_data_means = (
+        None if filtered_data is None else np.mean(filtered_data, axis=0)
+    )
+    filtered_data_vars = (
+        None if filtered_data is None else np.var(filtered_data, axis=0, ddof=1)
+    )
+
+    data = torch.tensor(data)
+    if filtered_data is not None:
+        filtered_data = torch.tensor(filtered_data)
+
+    tsne.save_means_and_vars(data, filtered_data)
+    lines = file_handle.getvalue().splitlines()
+
+    assert lines[0].split() == ["column", "mean", "var"]
+    for i, (mean, var) in enumerate(zip(data_means, data_vars)):
+        assert lines[i + 1].split() == [f"{i}", f"{mean}", f"{var}"]
+    if filtered_data is not None:
+        assert lines[len(data_means) + 2].split() == [
+            "filtered_column",
+            "filtered_mean",
+            "filtered_var",
+        ]
+        for i, (filtered_mean, filtered_var) in enumerate(
+            zip(filtered_data_means, filtered_data_vars)
+        ):
+            assert lines[i + len(data_means) + 3].split() == [
+                f"{i}",
+                f"{filtered_mean}",
+                f"{filtered_var}",
+            ]
 
 
 @pytest.mark.parametrize("data_name, step, output_path", [("test", 2, "output")])
@@ -126,7 +182,7 @@ def test_save_torch_labels(mock_open: MagicMock, output_path: str):
 )
 def test_load_labels(labels: str | None):
     if labels is None:
-        assert tsne.load_labels(labels) == None
+        assert tsne.load_labels(labels) is None
     else:
         expected = torch.tensor([float(label) for label in labels.splitlines()])
         labels_file = io.StringIO(labels)
@@ -224,3 +280,69 @@ def test_load_npy_file(
     assert prepare_data_args[0] == variance_threshold
     assert np.allclose(prepare_data_args[1], matrix)
     assert torch.allclose(result, matrix_t)
+
+
+@pytest.mark.parametrize("variance_threshold", [0.1, 0.5, None])
+@pytest.mark.parametrize(
+    "data",
+    [[[1, 2, 3], [4, 5, 6], [7, 8, 9]], [[9, 3, 3, 1], [1, 4, 2, 6], [3, 5, 11, 9]]],
+)
+@patch("NeuralTSNE.TSNE.neural_tsne.normalize_columns")
+@patch("NeuralTSNE.TSNE.neural_tsne.save_means_and_vars")
+@patch("NeuralTSNE.TSNE.neural_tsne.filter_data_by_variance")
+def test_prepare_data(
+    mock_filter_data_by_variance: MagicMock,
+    mock_save_means_and_vars: MagicMock,
+    mock_normalize_columns: MagicMock,
+    data: List[List[float]],
+    variance_threshold: float | None,
+):
+    data = np.array(data)
+    filtered = None if variance_threshold is None else data
+    data_t = torch.tensor(data, dtype=torch.float32)
+    mock_filter_data_by_variance.return_value = filtered
+    mock_normalize_columns.return_value = data_t
+
+    result = tsne.prepare_data(variance_threshold, data)
+
+    mock_filter_data_by_variance.assert_called_once_with(data, variance_threshold)
+    mock_normalize_columns.assert_called_once()
+    normalize_columns_args = mock_normalize_columns.call_args[0]
+    assert np.allclose(normalize_columns_args[0], data_t)
+    mock_save_means_and_vars.assert_called_once()
+    save_means_and_vars_args = mock_save_means_and_vars.call_args[0]
+    np.allclose(save_means_and_vars_args[0], data)
+    if variance_threshold is None:
+        assert save_means_and_vars_args[1] is None
+    else:
+        assert np.allclose(save_means_and_vars_args[1], filtered)
+    assert torch.allclose(result, data_t)
+
+
+@pytest.mark.parametrize(
+    "D, beta, expected_H, expected_P",
+    [
+        (
+            torch.tensor([[0.0, 2.0], [2.0, 0.0]]),
+            0.5,
+            1.2754,
+            torch.tensor([[0.3655, 0.1345], [0.1345, 0.3655]]),
+        ),
+        (
+            torch.tensor([[0.0, 1.0, 2.0], [1.0, 0.0, 3.0], [2.0, 3.0, 0.0]]),
+            0.7,
+            1.9558,
+            torch.tensor(
+                [
+                    [0.2114, 0.1050, 0.0521],
+                    [0.1050, 0.2114, 0.0259],
+                    [0.0521, 0.0259, 0.2114],
+                ]
+            ),
+        ),
+    ],
+)
+def test_Hbeta(D, beta, expected_H, expected_P):
+    H, P = tsne.Hbeta(D, beta)
+    assert torch.isclose(H, torch.tensor(expected_H), rtol=1e-3)
+    assert torch.allclose(P, expected_P, rtol=1e-3)

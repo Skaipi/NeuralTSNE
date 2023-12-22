@@ -121,8 +121,6 @@ def load_npy_file(
     exclude_cols: List[int],
     variance_threshold: float,
 ) -> torch.Tensor:
-    # name = input_file.name
-    # input_file.close()
     data = np.load(input_file)
     input_file.close()
     data = data[::step, :]
@@ -179,12 +177,12 @@ def x2p_job(
             if torch.isinf(torch.tensor(beta_min)):
                 beta /= 2
             else:
-                beta = (beta + beta_max) / 2
+                beta = (beta + beta_min) / 2
 
         H, thisP = Hbeta(Di, beta)
         Hdiff = H - logU
         it += 1
-    return i, thisP
+    return i, thisP, Hdiff, it
 
 
 def x2p(
@@ -501,7 +499,7 @@ def save_results(args: dict, test: DataLoader, Y: Union[List[Any], List[List[Any
     if test is not None:
         with open(args["o"], "w") as f:
             f.writelines(f"{args['step']}\n")
-            for i, batch in tqdm(
+            for _, batch in tqdm(
                 enumerate(Y), unit="batches", total=(len(Y)), desc="Saving results"
             ):
                 for px, py in batch:

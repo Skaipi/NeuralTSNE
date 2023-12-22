@@ -1,12 +1,14 @@
 from unittest.mock import MagicMock, call, patch, mock_open
+import tempfile
+import io
+from typing import List, Tuple, Any
+import argparse
+import os
 
 import pytest
-import NeuralTSNE.TSNE as tsne
 import numpy as np
-import io
-
 import torch
-from typing import List
+import NeuralTSNE.TSNE as tsne
 
 
 class PersistentStringIO(io.StringIO):
@@ -346,3 +348,258 @@ def test_Hbeta(D, beta, expected_H, expected_P):
     H, P = tsne.Hbeta(D, beta)
     assert torch.isclose(H, torch.tensor(expected_H), rtol=1e-3)
     assert torch.allclose(P, expected_P, rtol=1e-3)
+
+
+@pytest.mark.parametrize("i", [7, 1, 21])
+@pytest.mark.parametrize("perplexity", [10, 50, 1000])
+@pytest.mark.parametrize("tolerance", [0.1, 0.01, 0.001, 1e-6])
+@pytest.mark.parametrize("max_iterations", [100, 200, 50])
+@pytest.mark.parametrize(
+    "D",
+    [
+        torch.tensor([17.0, 89.0, 123.0, 40.0, 67.0]),
+        torch.tensor([0.6, 0.2311, 0.456, 0.01, 1.53]),
+    ],
+)  # TODO: CHECK IF THIS IS CORRECT
+def test_x2p_job(
+    i: int,
+    perplexity: int,
+    D: torch.Tensor,
+    tolerance: float,
+    max_iterations: int,
+):
+    logU = torch.tensor([np.log(perplexity)], dtype=torch.float32)
+    data = i, D, logU
+    result = tsne.x2p_job(data, tolerance, max_iterations)
+    i, P, Hdiff, iterations = result
+    assert i == i
+    if iterations != max_iterations:
+        assert torch.allclose(Hdiff, torch.zeros_like(Hdiff), rtol=tolerance)
+    else:
+        estimated_tolerance = 10 ** torch.ceil(torch.log10(torch.abs(Hdiff)))[0]
+        assert torch.isclose(torch.zeros_like(Hdiff), Hdiff, atol=estimated_tolerance)
+
+
+@pytest.mark.parametrize(
+    "X, perplexity, tolerance, expected_shape",
+    [
+        [torch.tensor([[1.0, 2.0], [3.0, 4.0]]), 2, 0.1, (2, 2)],
+        [
+            torch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]]),
+            3,
+            0.01,
+            (3, 3),
+        ],
+        [
+            torch.tensor(
+                [
+                    [1.0, 6.0, 4.0, 2.0, 5.0],
+                    [7.0, 2.0, 6.0, 7.0, 3.0],
+                    [8.0, 2.0, 1.0, 7.0, 9.0],
+                ]
+            ),
+            5,
+            0.001,
+            (3, 3),
+        ],
+    ],
+)
+@patch("NeuralTSNE.TSNE.neural_tsne.x2p_job")
+def test_x2p(
+    mock_x2p_job: MagicMock,
+    X: torch.Tensor,
+    perplexity: int,
+    tolerance: float,
+    expected_shape: tuple,
+):
+    log_perplexity = torch.tensor([np.log(perplexity)], dtype=torch.float32)
+    pair_squared_distances = torch.cdist(X, X, p=2) ** 2
+
+    pairwise_distances = pair_squared_distances[pair_squared_distances != 0].reshape(
+        pair_squared_distances.shape[0], -1
+    )
+
+    returned_P = [
+        (i, torch.ones(pairwise_distances.shape[1])) for i in range(X.shape[0])
+    ]
+
+    mock_x2p_job.side_effect = returned_P
+
+    P = tsne.x2p(X, perplexity, tolerance)
+    assert P.shape == expected_shape
+    assert mock_x2p_job.call_count == X.shape[0]
+    mock_x2p_calls = mock_x2p_job.call_args_list
+
+    P_diag = P.diag()
+    assert torch.allclose(P_diag, torch.zeros_like(P_diag), rtol=1e-5)
+    P_no_diag = P[P != 0].reshape(P.shape[0], -1)
+    assert torch.allclose(P_no_diag, torch.ones_like(P_no_diag), rtol=1e-5)
+
+    for k, call_args in enumerate(mock_x2p_calls):
+        data, tol = call_args[0]
+        i, D, logU = data
+
+        assert i == k
+        assert torch.allclose(D, pairwise_distances[k], rtol=1e-5)
+        assert torch.isclose(logU, log_perplexity, rtol=1e-5)
+        assert tol == tolerance
+
+
+@pytest.fixture
+def neural_network_params(
+    request: type[pytest.FixtureRequest],
+) -> dict[str, Any]:
+    initial_features, n_components, multipliers = request.param
+    return {
+        "initial_features": initial_features,
+        "n_components": n_components,
+        "multipliers": multipliers,
+    }
+
+
+@pytest.fixture
+def neural_network(neural_network_params: dict[str, Any]) -> tsne.NeuralNetwork:
+    return tsne.NeuralNetwork(**neural_network_params)
+
+
+@pytest.mark.parametrize(
+    "neural_network_params",
+    [
+        ((10, 5, [2, 3, 1, 0.5])),
+        ((5, 3, [2, 6, 1])),
+        ((3, 2, [2, 1])),
+    ],
+    indirect=True,
+)
+def test_neural_network_forward(neural_network_params, neural_network):
+    input_data = torch.randn(10, neural_network_params["initial_features"])
+    output = neural_network(input_data)
+
+    assert output.shape == (10, neural_network_params["n_components"])
+
+
+@pytest.mark.parametrize(
+    "neural_network_params, activation_functions",
+    [
+        (
+            (10, 2, [2, 3, 4, 2, 0.3, 1.4]),
+            [(i, torch.nn.ReLU) for i in range(1, 13, 2)],
+        ),
+        ((20, 3, [2, 6, 1]), [(i, torch.nn.ReLU) for i in range(1, 7, 2)]),
+        ((15, 4, [2, 1]), [(i, torch.nn.ReLU) for i in range(1, 5, 2)]),
+    ],
+    indirect=["neural_network_params"],
+)
+def test_neural_network_layer_shapes(
+    neural_network_params, neural_network, activation_functions: List[torch.nn.Module]
+):
+    input_data = torch.randn(10, neural_network_params["initial_features"])
+    layer_shapes = [input_data.shape[1]]
+    is_activation_valid = []
+
+    for i, layer in enumerate(neural_network.linear_relu_stack):
+        if len(activation_functions) > 0 and i == activation_functions[0][0]:
+            _, function = activation_functions.pop(0)
+            if isinstance(layer, function):
+                is_activation_valid.append(True)
+            else:
+                is_activation_valid.append(False)
+        else:
+            layer_shapes.append(layer.out_features)
+
+    expected_shapes = [
+        int(
+            neural_network_params["multipliers"][i]
+            * neural_network_params["initial_features"]
+        )
+        for i in range(len(neural_network_params["multipliers"]))
+    ]
+
+    expected_shapes = [layer_shapes[0]] + expected_shapes + [layer_shapes[-1]]
+    assert expected_shapes == layer_shapes
+    assert activation_functions == []
+    assert all(is_activation_valid)
+
+
+@pytest.mark.parametrize(
+    "neural_network_params", [((10, 5, [2, 3, 1, 0.5]))], indirect=True
+)
+def test_neural_network_gradients(neural_network_params, neural_network):
+    input_data = torch.randn(10, neural_network_params["initial_features"])
+    target = torch.rand(10, neural_network_params["n_components"])
+
+    loss_fn = torch.nn.MSELoss(reduction="sum")
+    optimizer = torch.optim.SGD(neural_network.parameters(), lr=1e-3)
+
+    neural_network.train()
+
+    y_pred = neural_network(input_data)
+    loss = loss_fn(y_pred, target)
+    optimizer.zero_grad()
+
+    gradient = neural_network.linear_relu_stack[0].weight
+    gradient = gradient.clone().detach()
+
+    loss.backward()
+
+    optimizer.step()
+
+    gradient_after = neural_network.linear_relu_stack[0].weight
+
+    assert not torch.allclose(gradient, gradient_after, atol=1e-8)
+
+
+# TODO: Test Parametric TSNE
+
+# TODO: Test Classifier
+
+# region Test FileTypeWithExtensionCheck
+
+
+@pytest.fixture
+def valid_temp_file(request):
+    file = tempfile.NamedTemporaryFile(suffix=".txt", delete=False)
+    temp_file_path = file.name
+    file.close()
+    yield temp_file_path
+    os.remove(temp_file_path)
+
+
+# TODO: Parametrize fixture to test multiple valid extensions through request
+
+@pytest.fixture
+def invalid_temp_file(request):
+    file = tempfile.NamedTemporaryFile(suffix=".bat", delete=False)
+    temp_file_path = file.name
+    file.close()
+    yield temp_file_path
+    os.remove(temp_file_path)
+
+
+def test_valid_extension(valid_temp_file: str):
+    file_type = tsne.FileTypeWithExtensionCheck(valid_extensions=".txt")
+    result = file_type(valid_temp_file)
+    assert result.name == valid_temp_file
+
+
+def test_invalid_extension(invalid_temp_file: str):
+    file_type = tsne.FileTypeWithExtensionCheck(valid_extensions=".txt")
+    with pytest.raises(argparse.ArgumentTypeError):
+        file_type(invalid_temp_file)
+
+
+@pytest.mark.parametrize(
+    "temp_file_fixture",
+    [
+        pytest.param("valid_temp_file", marks=pytest.mark.valid_file),
+        pytest.param("invalid_temp_file", marks=pytest.mark.invalid_file),
+    ],
+)
+def test_no_extension_check(temp_file_fixture: str, request):
+    file_type = tsne.FileTypeWithExtensionCheck()
+    temp_file_path = request.getfixturevalue(temp_file_fixture)
+    result = file_type(temp_file_path)
+    assert result.name == temp_file_path
+
+
+# endregion

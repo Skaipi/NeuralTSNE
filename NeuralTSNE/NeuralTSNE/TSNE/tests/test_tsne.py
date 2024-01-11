@@ -1,6 +1,9 @@
 from unittest.mock import MagicMock, call, patch, mock_open
+import string
 import tempfile
 import io
+import random
+from collections import OrderedDict
 from typing import List, Tuple, Any
 import argparse
 import os
@@ -8,6 +11,7 @@ import os
 import pytest
 import numpy as np
 import torch
+from torch.utils.data import Dataset, DataLoader, TensorDataset
 import NeuralTSNE.TSNE as tsne
 
 
@@ -22,6 +26,59 @@ class PersistentStringIO(io.StringIO):
     @property
     def closed(self):
         return self._closed
+
+
+class MyDataset(Dataset):
+    def __init__(
+        self,
+        num_samples: int,
+        num_variables: int,
+        item_range: Tuple[float, float] | Tuple[int, int] = None,
+        generate_int: bool = False,
+    ):
+        self.num_samples = num_samples
+        self.num_variables = num_variables
+        self.item_range = item_range or (0, 1)
+        self.generate_int = generate_int
+
+    def __len__(self):
+        return self.num_samples
+
+    def __getitem__(self, index):
+        if self.generate_int:
+            sample = torch.randint(*self.item_range, size=(self.num_variables,))
+        else:
+            sample = torch.FloatTensor(self.num_variables).uniform_(*self.item_range)
+        return tuple([sample])
+
+
+class DataLoaderMock:
+    def __init__(self, dataset: MyDataset, batch_size: int):
+        self.dataset = dataset
+        self.batch_size = batch_size
+        self.batches = []
+
+    def __iter__(self):
+        for i in range(0, len(self.dataset), self.batch_size):
+            batch = tuple(
+                torch.cat(
+                    [
+                        torch.unsqueeze(self.dataset[j][k], 0)
+                        for j in range(i, i + self.batch_size)
+                    ],
+                    dim=0,
+                )
+                for k in range(len(self.dataset[0]))
+            )
+            self.batches.append(batch)
+            yield batch
+
+    def __len__(self):
+        return len(self.dataset)
+
+
+def get_random_string(length: int):
+    return "".join(random.choices(string.ascii_letters + string.digits, k=length))
 
 
 @pytest.mark.parametrize(
@@ -208,7 +265,9 @@ def test_load_labels(labels: str | None):
 @pytest.mark.parametrize("exclude_cols", [[3], [1, 2], [3, 1], None])
 @pytest.mark.parametrize("step", [1, 2, 3])
 @patch("NeuralTSNE.TSNE.neural_tsne.prepare_data")
+@patch("builtins.open", new_callable=mock_open)
 def test_load_text_file(
+    mock_open: MagicMock,
     mock_prepare_data: MagicMock,
     file_content: str,
     step: int,
@@ -216,7 +275,8 @@ def test_load_text_file(
     exclude_cols: List[int] | None,
     variance_threshold: float,
 ):
-    mock_file = io.StringIO(file_content)
+    mock_content = io.StringIO(file_content)
+    mock_open.return_value = mock_content
     start_index = 1 if header else 0
     matrix = np.array(
         [
@@ -234,12 +294,12 @@ def test_load_text_file(
     mock_prepare_data.return_value = matrix_t
 
     result = tsne.load_text_file(
-        mock_file, step, header, exclude_cols, variance_threshold
+        mock_open, step, header, exclude_cols, variance_threshold
     )
 
     mock_prepare_data.assert_called_once()
     prepare_data_args = mock_prepare_data.call_args[0]
-    assert mock_file.closed
+    assert mock_content.closed
     assert prepare_data_args[0] == variance_threshold
     assert np.allclose(prepare_data_args[1], matrix)
     assert torch.allclose(result, matrix_t)
@@ -278,7 +338,6 @@ def test_load_npy_file(
 
     mock_prepare_data.assert_called_once()
     prepare_data_args = mock_prepare_data.call_args[0]
-    assert matrix_file.closed
     assert prepare_data_args[0] == variance_threshold
     assert np.allclose(prepare_data_args[1], matrix)
     assert torch.allclose(result, matrix_t)
@@ -549,9 +608,434 @@ def test_neural_network_gradients(neural_network_params, neural_network):
     assert not torch.allclose(gradient, gradient_after, atol=1e-8)
 
 
-# TODO: Test Parametric TSNE
+# region Test ParametricTSNE
+
+
+@pytest.fixture
+def parametric_tsne_instance(request):
+    params = request.param
+    with (
+        patch("NeuralTSNE.TSNE.neural_tsne.ParametricTSNE.set_loss_fn") as mock_loss_fn,
+        patch("torchinfo.summary") as mock_summary,
+        patch("NeuralTSNE.TSNE.neural_tsne.NeuralNetwork", autospec=True) as mock_nn,
+    ):
+        mock_loss_fn.return_value = params["loss_fn"]
+        instance = tsne.ParametricTSNE(**params)
+        yield instance, params, {
+            "loss_fn": mock_loss_fn,
+            "summary": mock_summary,
+            "nn": mock_nn,
+        }
+
+
+@pytest.fixture
+def default_parametric_tsne_instance():
+    params = {
+        "loss_fn": "kl_divergence",
+        "n_components": 3,
+        "perplexity": 50,
+        "batch_size": 10,
+        "early_exaggeration_epochs": 10,
+        "early_exaggeration_value": 8.0,
+        "max_iterations": 500,
+        "features": 512,
+        "multipliers": [1.0, 1.5],
+        "n_jobs": 2,
+        "tolerance": 1e-6,
+        "force_cpu": True,
+    }
+    with patch("torchinfo.summary"):
+        yield tsne.ParametricTSNE(**params), params
+
+
+@pytest.mark.parametrize(
+    "parametric_tsne_instance",
+    [
+        {
+            "loss_fn": "mse",
+            "n_components": 2,
+            "perplexity": 30,
+            "batch_size": 64,
+            "early_exaggeration_epochs": 5,
+            "early_exaggeration_value": 12.0,
+            "max_iterations": 300,
+            "features": 256,
+            "multipliers": [1.0, 2.0],
+            "n_jobs": 0,
+            "tolerance": 1e-5,
+            "force_cpu": False,
+        },
+        {
+            "loss_fn": "kl_divergence",
+            "n_components": 3,
+            "perplexity": 50,
+            "batch_size": 128,
+            "early_exaggeration_epochs": 10,
+            "early_exaggeration_value": 8.0,
+            "max_iterations": 500,
+            "features": 512,
+            "multipliers": [1.0, 1.5],
+            "n_jobs": 2,
+            "tolerance": 1e-6,
+            "force_cpu": True,
+        },
+    ],
+    indirect=True,
+)
+def test_parametric_tsne_init(parametric_tsne_instance):
+    tsne_instance, params, mocks = parametric_tsne_instance
+    tsne_dict = tsne_instance.__dict__
+    del tsne_dict["device"], tsne_dict["model"]
+
+    mocks["loss_fn"].assert_called_once_with(params["loss_fn"])
+    mocks["nn"].assert_called_once_with(
+        params["features"],
+        params["n_components"],
+        params["multipliers"],
+    )
+    del (
+        params["features"],
+        params["n_components"],
+        params["multipliers"],
+        params["force_cpu"],
+    )
+    assert isinstance(tsne_instance, tsne.ParametricTSNE)
+    assert tsne_dict == params
+
+
+@pytest.mark.parametrize("loss_fn", ["kl_divergence"])
+def test_set_loss_fn(default_parametric_tsne_instance, loss_fn: List[str]):
+    tsne_instance, params = default_parametric_tsne_instance
+    tsne_instance.loss_fn = None
+    tsne_instance.set_loss_fn(loss_fn)
+
+    assert tsne_instance.loss_fn is not None
+
+
+@pytest.mark.parametrize("loss_fn", ["dummy"])
+def test_set_invalid_loss_fn(default_parametric_tsne_instance, loss_fn: List[str]):
+    tsne_instance, params = default_parametric_tsne_instance
+    tsne_instance.loss_fn = None
+    tsne_instance.set_loss_fn(loss_fn)
+
+    assert tsne_instance.loss_fn is None
+
+
+@pytest.mark.parametrize("filename", ["test", "model"])
+@patch("NeuralTSNE.TSNE.neural_tsne.torch.save")
+def test_save_model(
+    mock_save: MagicMock, filename: str, default_parametric_tsne_instance
+):
+    tsne_instance, _ = default_parametric_tsne_instance
+    tsne_instance.save_model(filename)
+
+    mock_save.assert_called_once()
+    args = mock_save.call_args_list[0].args
+    assert isinstance(args[0], OrderedDict)
+    assert args[1] == filename
+
+
+@pytest.mark.parametrize("filename", ["test", "model"])
+@patch("NeuralTSNE.TSNE.neural_tsne.torch.load")
+@patch("NeuralTSNE.TSNE.neural_tsne.NeuralNetwork.load_state_dict")
+def test_read_model(
+    mock_load_dict: MagicMock,
+    mock_load: MagicMock,
+    filename: str,
+    default_parametric_tsne_instance,
+):
+    tsne_instance, _ = default_parametric_tsne_instance
+    tsne_instance.read_model(filename)
+
+    mock_load.assert_called_once_with(filename)
+    mock_load_dict.assert_called_once_with(mock_load(filename))
+
+
+@pytest.fixture
+def mock_dataloaders():
+    with patch(
+        "NeuralTSNE.TSNE.neural_tsne.ParametricTSNE.create_dataloaders", autospec=True
+    ) as mock_create_dataloaders:
+        mock_create_dataloaders.return_value = DataLoader(Dataset()), DataLoader(
+            Dataset()
+        )
+        yield mock_create_dataloaders
+
+
+@pytest.mark.parametrize(
+    "split", [(0.8, 0.2), (0.6, 0.4), (0.55, 0.45), (0, 1), (1, 0)]
+)
+@pytest.mark.parametrize("labels", [True, False])
+def test_split_dataset(
+    mock_dataloaders,
+    default_parametric_tsne_instance,
+    split: Tuple[float, float],
+    labels: bool,
+):
+    tsne_instance, _ = default_parametric_tsne_instance
+    y = None
+    X = torch.randn(100, 10)
+    if labels:
+        y = torch.randint(0, 2, (100,))
+    train_dataloader, test_dataloader = tsne_instance.split_dataset(
+        X, y, train_size=split[0], test_size=split[1]
+    )
+
+    assert isinstance(train_dataloader, DataLoader)
+    assert isinstance(test_dataloader, DataLoader)
+    assert mock_dataloaders.call_count == 1
+
+    args = mock_dataloaders.call_args_list[0].args
+    train = args[1]
+    test = args[2]
+
+    train_len = len(train) if split[0] != 0 else None
+    test_len = len(test) if split[1] != 0 else None
+    tensors_number = 1 if not labels else 2
+
+    if train_len is None or test_len is None:
+        if split[0] == 0:
+            assert train is None
+            assert len(test.dataset.tensors) == tensors_number
+            assert test_len == X.shape[0]
+        else:
+            assert test is None
+            assert len(train.dataset.tensors) == tensors_number
+            assert train_len is X.shape[0]
+    else:
+        assert len(train.dataset.tensors) == tensors_number
+        assert len(test.dataset.tensors) == tensors_number
+
+        eps = 1e-4
+        assert (
+            split[0] - eps < train_len / (train_len + test_len) < split[0] + eps
+        ) is True
+        assert (
+            split[1] - eps < test_len / (train_len + test_len) < split[1] + eps
+        ) is True
+
+
+@pytest.mark.parametrize(
+    "input_values, output",
+    [
+        ((None, None), (0.8, 0.2)),
+        ((0.7, None), (0.7, 0.3)),
+        ((None, 0.4), (0.6, 0.4)),
+        ((0.6, 0.4), (0.6, 0.4)),
+        ((0.8, 0.5), (0.8, 0.2)),
+        ((0.5, 0.8), (0.5, 0.5)),
+    ],
+)
+def test_determine_train_test_split(
+    default_parametric_tsne_instance,
+    input_values: Tuple[float | None, float | None],
+    output: Tuple[float, float],
+):
+    tsne_instance, _ = default_parametric_tsne_instance
+    train_size, test_size = tsne_instance._determine_train_test_split(*input_values)
+    eps = 1e-4
+    assert (train_size - eps < output[0] < train_size + eps) is True
+    assert (test_size - eps < output[1] < test_size + eps) is True
+
+
+@pytest.mark.parametrize(
+    "train_dataset",
+    [TensorDataset(torch.randn(100, 10), torch.randint(0, 2, (100,))), None],
+)
+@pytest.mark.parametrize(
+    "test_dataset",
+    [TensorDataset(torch.randn(20, 10), torch.randint(0, 2, (20,))), None],
+)
+def test_create_dataloaders(
+    default_parametric_tsne_instance,
+    train_dataset: TensorDataset | None,
+    test_dataset: TensorDataset | None,
+):
+    tsne_instance, _ = default_parametric_tsne_instance
+    train_loader, test_loader = tsne_instance.create_dataloaders(
+        train_dataset, test_dataset
+    )
+
+    if train_dataset is None:
+        assert train_loader is None
+    else:
+        assert isinstance(train_loader, DataLoader)
+
+    if test_dataset is None:
+        assert test_loader is None
+    else:
+        assert isinstance(test_loader, DataLoader)
+
+
+def test_calculate_P(default_parametric_tsne_instance):
+    TQDM_DISABLE = 1
+    tsne_instance, params = default_parametric_tsne_instance
+
+    dataloader = DataLoader(
+        TensorDataset(torch.randn(50, 15), torch.randint(0, 2, (50,))),
+        batch_size=params["batch_size"],
+    )
+
+    result_P = tsne_instance._calculate_P(dataloader)
+
+    assert result_P.shape == (50, params["batch_size"])
+
+
+@pytest.mark.parametrize("fill_with", [0, "NaN"])
+@patch("NeuralTSNE.TSNE.neural_tsne.x2p")
+def test_calculate_P_mocked(
+    mock_x2p: MagicMock, default_parametric_tsne_instance, fill_with: Any
+):
+    TQDM_DISABLE = 1
+    tsne_instance, params = default_parametric_tsne_instance
+    samples = 50
+
+    dataloader = DataLoader(
+        TensorDataset(torch.randn(samples, 15), torch.randint(0, 2, (50,))),
+        batch_size=params["batch_size"],
+    )
+
+    select_one = random.randint(0, params["batch_size"] - 1)
+    if fill_with == 0:
+        ret = torch.zeros(params["batch_size"], params["batch_size"])
+    if fill_with == "NaN":
+        ret = torch.full((params["batch_size"], params["batch_size"]), torch.nan)
+
+    ret[select_one] = 1
+    mock_x2p.return_value = ret
+
+    result_P = tsne_instance._calculate_P(dataloader)
+
+    assert result_P.shape == (samples, params["batch_size"])
+
+    expected_tensor = torch.zeros(samples, params["batch_size"])
+    expected_tensor[:, select_one] = 1
+    for i in range(0, samples, params["batch_size"]):
+        cut = expected_tensor[i : i + params["batch_size"]]
+        cut = cut + cut.T
+        cut = cut / cut.sum()
+        expected_tensor[i : i + params["batch_size"]] = cut
+    assert torch.allclose(result_P, expected_tensor)
+
+
+@pytest.mark.parametrize("fill_with", [0, "NaN"])
+@patch("NeuralTSNE.TSNE.neural_tsne.x2p")
+def test_calculate_P_mocked_nan(
+    mock_x2p: MagicMock, default_parametric_tsne_instance, fill_with: Any
+):
+    TQDM_DISABLE = 1
+    tsne_instance, params = default_parametric_tsne_instance
+    samples = 50
+
+    dataloader = DataLoader(
+        TensorDataset(torch.randn(samples, 15), torch.randint(0, 2, (50,))),
+        batch_size=params["batch_size"],
+    )
+
+    if fill_with == 0:
+        ret = torch.zeros(params["batch_size"], params["batch_size"])
+    if fill_with == "NaN":
+        ret = torch.full((params["batch_size"], params["batch_size"]), torch.nan)
+
+    mock_x2p.return_value = ret
+
+    result_P = tsne_instance._calculate_P(dataloader)
+
+    assert result_P.shape == (samples, params["batch_size"])
+    assert torch.allclose(
+        result_P, torch.full((samples, params["batch_size"]), torch.nan), equal_nan=True
+    )
+
+
+@pytest.mark.parametrize(
+    "P, Q, expected",
+    [
+        (
+            torch.tensor([[0.1, 0.4, 0.5], [0.3, 0.25, 0.45], [0.26, 0.24, 0.5]]),
+            torch.tensor([[0.8, 0.15, 0.05], [0.1, 0.5, 0.4], [0.3, 0.4, 0.4]]),
+            torch.tensor(29.623),
+        ),
+        (
+            torch.tensor(
+                [
+                    [0.0000, 0.0592, 0.0651, 0.0372, 0.0588],
+                    [0.0592, 0.0000, 0.0528, 0.0382, 0.0533],
+                    [0.0651, 0.0528, 0.0000, 0.0444, 0.0465],
+                    [0.0372, 0.0382, 0.0444, 0.0000, 0.0446],
+                    [0.0588, 0.0533, 0.0465, 0.0446, 0.0000],
+                ]
+            ),
+            torch.tensor(
+                [
+                    [0.4781, 0.7788],
+                    [0.8525, 0.3280],
+                    [0.0730, 0.9723],
+                    [0.0679, 0.1797],
+                    [0.5947, 0.5116],
+                ]
+            ),
+            torch.tensor(0.0154),
+        ),
+    ],
+)
+def test_kl_divergence(
+    default_parametric_tsne_instance,
+    P: torch.tensor,
+    Q: torch.tensor,
+    expected: torch.tensor,
+):
+    tsne_instance, _ = default_parametric_tsne_instance
+    tsne_instance.batch_size = P.shape[0]
+    C = tsne_instance._kl_divergence(Q, P)
+
+    assert torch.allclose(C, expected, rtol=1e-3)
+
+
+# endregion
 
 # TODO: Test Classifier
+
+
+@pytest.fixture
+def classifier_instance(request, default_parametric_tsne_instance):
+    params = request.param
+
+    with patch(
+        "NeuralTSNE.TSNE.neural_tsne.Classifier.reset_exaggeration_status"
+    ) as mock_exaggeration_status:
+        yield tsne.Classifier(
+            tsne=default_parametric_tsne_instance[0], **params
+        ), params | {
+            "tsne": default_parametric_tsne_instance[0]
+        }, mock_exaggeration_status
+
+
+@pytest.mark.parametrize(
+    "classifier_instance",
+    [{"shuffle": False, "optimizer": "adam", "lr": 1e-5}],
+    indirect=True,
+)
+def test_classifier_init(classifier_instance):
+    classifier_instance, params, mock_exaggeration_status = classifier_instance
+
+    assert isinstance(classifier_instance, tsne.Classifier)
+    assert classifier_instance.tsne == params["tsne"]
+    assert classifier_instance.batch_size == params["tsne"].batch_size
+    assert classifier_instance.model == params["tsne"].model
+    assert classifier_instance.loss_fn == params["tsne"].loss_fn
+    assert (
+        classifier_instance.exaggeration_epochs
+        == params["tsne"].early_exaggeration_epochs
+    )
+    assert (
+        classifier_instance.exaggeration_value
+        == params["tsne"].early_exaggeration_value
+    )
+    assert classifier_instance.shuffle == params["shuffle"]
+    assert classifier_instance.lr == params["lr"]
+    assert classifier_instance.optimizer == params["optimizer"]
+    assert mock_exaggeration_status.call_count == 1
+
 
 # region Test FileTypeWithExtensionCheck
 
@@ -567,6 +1051,7 @@ def valid_temp_file(request):
 
 # TODO: Parametrize fixture to test multiple valid extensions through request
 
+
 @pytest.fixture
 def invalid_temp_file(request):
     file = tempfile.NamedTemporaryFile(suffix=".bat", delete=False)
@@ -577,13 +1062,13 @@ def invalid_temp_file(request):
 
 
 def test_valid_extension(valid_temp_file: str):
-    file_type = tsne.FileTypeWithExtensionCheck(valid_extensions=".txt")
+    file_type = tsne.FileTypeWithExtensionCheck(valid_extensions="txt")
     result = file_type(valid_temp_file)
     assert result.name == valid_temp_file
 
 
 def test_invalid_extension(invalid_temp_file: str):
-    file_type = tsne.FileTypeWithExtensionCheck(valid_extensions=".txt")
+    file_type = tsne.FileTypeWithExtensionCheck(valid_extensions="txt")
     with pytest.raises(argparse.ArgumentTypeError):
         file_type(invalid_temp_file)
 
@@ -603,3 +1088,166 @@ def test_no_extension_check(temp_file_fixture: str, request):
 
 
 # endregion
+
+
+# region Test FileTypeWithExtensionCheckWithPredefinedDatasets
+
+
+@pytest.fixture
+def file_type_with_datasets(request):
+    available_datasets = request.param.get("available_datasets", [])
+    return tsne.FileTypeWithExtensionCheckWithPredefinedDatasets(
+        valid_extensions="txt", available_datasets=available_datasets
+    )
+
+
+def test_valid_extension_with_datasets(valid_temp_file: str):
+    file_type = tsne.FileTypeWithExtensionCheckWithPredefinedDatasets(
+        valid_extensions="txt"
+    )
+    result = file_type(valid_temp_file)
+    assert result.name == valid_temp_file
+
+
+def test_invalid_extension_with_datasets(invalid_temp_file: str):
+    file_type = tsne.FileTypeWithExtensionCheckWithPredefinedDatasets(
+        valid_extensions="txt"
+    )
+    with pytest.raises(argparse.ArgumentTypeError):
+        file_type(invalid_temp_file)
+
+
+@pytest.mark.parametrize(
+    "temp_file_fixture",
+    [
+        pytest.param("valid_temp_file", marks=pytest.mark.valid_file),
+        pytest.param("invalid_temp_file", marks=pytest.mark.invalid_file),
+    ],
+)
+def test_no_extension_check_with_datasets(temp_file_fixture: str, request):
+    file_type = tsne.FileTypeWithExtensionCheckWithPredefinedDatasets()
+    temp_file_path = request.getfixturevalue(temp_file_fixture)
+    result = file_type(temp_file_path)
+    assert result.name == temp_file_path
+
+
+@pytest.mark.parametrize("dataset", ["dataset1", "dataset2"])
+@pytest.mark.parametrize("available_datasets", [["dataset1", "dataset2"]])
+def test_predefined_dataset(available_datasets: List[str], dataset: str):
+    file_type = tsne.FileTypeWithExtensionCheckWithPredefinedDatasets(
+        available_datasets=available_datasets
+    )
+    result = file_type(dataset)
+    assert result == dataset
+
+
+@pytest.mark.parametrize("dataset", ["dataset3", "invalid_dataset"])
+@pytest.mark.parametrize("available_datasets", [["dataset1", "dataset2"]])
+def test_invalid_dataset(available_datasets: List[str], dataset: str):
+    file_type = tsne.FileTypeWithExtensionCheckWithPredefinedDatasets(
+        valid_extensions="txt", available_datasets=available_datasets
+    )
+    with pytest.raises(argparse.ArgumentTypeError):
+        file_type(dataset)
+
+
+@pytest.mark.parametrize("dataset", ["dataset3", "invalid_dataset"])
+@pytest.mark.parametrize("available_datasets", [["dataset1", "dataset2"]])
+def test_invalid_dataset_with_no_extension(available_datasets: List[str], dataset: str):
+    file_type = tsne.FileTypeWithExtensionCheckWithPredefinedDatasets(
+        available_datasets=available_datasets
+    )
+    with pytest.raises(argparse.ArgumentTypeError):
+        file_type(dataset)
+
+
+# endregion
+
+
+@pytest.fixture(params=[""])
+def get_output_filename(request):
+    suffix = request.param
+    file_name = get_random_string(10)
+    yield file_name, suffix
+    file_to_delete = f"{file_name}{suffix}"
+    if os.path.exists(file_to_delete):
+        os.remove(file_to_delete)
+
+
+@pytest.mark.parametrize("batch_shape", [(5, 2), None])
+@pytest.mark.parametrize("step", [30, 45, 2])
+def test_save_results(
+    get_output_filename: str, batch_shape: Tuple[int | int] | None, step: int
+):
+    TQDM_DISABLE = 1
+    filename, _ = get_output_filename
+    args = {"o": filename, "step": step}
+
+    test_data = None
+
+    if batch_shape:
+        num_samples = batch_shape[0] * 10
+        dataset = MyDataset(num_samples, batch_shape[1])
+        test_data = DataLoaderMock(dataset, batch_size=2)
+
+    entries_num = random.randint(20, 500)
+    Y = [
+        [(random.random(), random.random()) for _ in range(entries_num)]
+        for _ in range(2)
+    ]
+
+    tsne.save_results(args, test_data, Y)
+
+    if batch_shape is None:
+        assert os.path.exists(filename) is False
+        return
+
+    with open(filename, "r") as f:
+        lines = f.readlines()
+
+    assert lines[0].strip() == str(step)
+    expected_lines = ["\t".join(tuple(map(str, item))) for batch in Y for item in batch]
+    for i in range(1, len(lines)):
+        assert lines[i].strip() == expected_lines[i - 1]
+
+
+@pytest.mark.parametrize(
+    "get_output_filename",
+    ["_labels.txt"],
+    indirect=["get_output_filename"],
+)
+@pytest.mark.parametrize("num_batches", [3, 5])
+@pytest.mark.parametrize("batch_shape", [(5, 3), (4, 4), None])
+def test_save_labels_data(
+    get_output_filename: str, num_batches: int, batch_shape: Tuple[int, int] | None
+):
+    TQDM_DISABLE = 1
+    filename, suffix = get_output_filename
+    args = {"o": filename}
+
+    test_data = None
+
+    if batch_shape:
+        num_samples = batch_shape[0] * 10
+        dataset = MyDataset(num_samples, batch_shape[1], (0, 10), True)
+        test_data = DataLoaderMock(dataset, batch_size=num_batches)
+
+    tsne.save_labels_data(args, test_data)
+
+    if batch_shape:
+        data = [
+            "\t".join(map(str, row.tolist()))
+            for batch in test_data.batches
+            for tensor in batch
+            for row in tensor
+        ]
+
+    if batch_shape is None:
+        assert os.path.exists(filename) is False
+        return
+
+    with open(f"{filename}{suffix}", "r") as f:
+        lines = f.readlines()
+
+    for i, line in enumerate(lines):
+        assert line.strip() == data[i]

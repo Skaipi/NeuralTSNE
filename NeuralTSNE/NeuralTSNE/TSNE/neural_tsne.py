@@ -89,12 +89,13 @@ def load_labels(labels: io.TextIOWrapper) -> Union[torch.Tensor, None]:
 
 
 def load_text_file(
-    input_file: io.TextIOWrapper,
+    input_file: str,
     step: int,
     header: bool,
     exclude_cols: List[int],
     variance_threshold: float,
 ) -> torch.Tensor:
+    input_file = open(input_file, "r")
     cols = None
     if header:
         input_file.readline()
@@ -116,13 +117,12 @@ def load_text_file(
 
 
 def load_npy_file(
-    input_file: io.TextIOWrapper,
+    input_file: str,
     step: int,
     exclude_cols: List[int],
     variance_threshold: float,
 ) -> torch.Tensor:
     data = np.load(input_file)
-    input_file.close()
     data = data[::step, :]
     if exclude_cols:
         data = np.delete(data, exclude_cols, axis=1)
@@ -267,7 +267,6 @@ class ParametricTSNE:
             ),
         )
 
-        self.n_components = n_components
         self.perplexity = perplexity
         self.batch_size = batch_size
         self.early_exaggeration_epochs = early_exaggeration_epochs
@@ -279,8 +278,11 @@ class ParametricTSNE:
         self.loss_fn = self.set_loss_fn(loss_fn)
 
     def set_loss_fn(self, loss_fn) -> Callable:
+        fn = None
         if loss_fn == "kl_divergence":
-            return self._kl_divergence
+            fn = self._kl_divergence
+        self.loss_fn = fn
+        return fn
 
     def save_model(self, filename: str):
         torch.save(self.model.state_dict(), filename)
@@ -373,7 +375,9 @@ class ParametricTSNE:
     def _kl_divergence(self, Y: torch.Tensor, P: torch.Tensor) -> torch.Tensor:
         sum_Y = torch.sum(torch.square(Y), dim=1)
         eps = torch.tensor([1e-15], device=self.device)
-        D = sum_Y + torch.reshape(sum_Y, [-1, 1]) - 2 * torch.matmul(Y, Y.mT)
+        D = (
+            sum_Y + torch.reshape(sum_Y, [-1, 1]) - 2 * torch.matmul(Y, Y.mT)
+        )  # TODO: cdist may be the way to calculate distances neatly
         Q = torch.pow(1 + D / 1.0, -(1.0 + 1) / 2)
         Q *= 1 - torch.eye(self.batch_size, device=self.device)
         Q /= torch.sum(Q)
@@ -486,12 +490,15 @@ class FileTypeWithExtensionCheck(argparse.FileType):
 
 
 class FileTypeWithExtensionCheckWithPredefinedDatasets(FileTypeWithExtensionCheck):
+    def __init__(
+        self, mode="r", valid_extensions=None, available_datasets=None, **kwargs
+    ):
+        super().__init__(mode, valid_extensions, **kwargs)
+        self.available_datasets = available_datasets or []
+
     def __call__(self, string):
-        if len(available_datasets) > 0 and string in available_datasets:
+        if len(self.available_datasets) > 0 and string in self.available_datasets:
             return string
-        if self.valid_extensions:
-            if not string.endswith(self.valid_extensions):
-                raise argparse.ArgumentTypeError("Not a valid filename extension!")
         return super().__call__(string)
 
 
@@ -555,8 +562,8 @@ def run_tsne(
     lr=1e-3,
     auto_lr=False,
 ):
+    available_datasets = []
     if "NeuralTSNE.DatasetLoader.get_datasets" in sys.modules:
-        global available_datasets
         available_datasets = get_datasets._get_available_datasets()
 
     if net_multipliers is None:
@@ -574,7 +581,7 @@ def run_tsne(
     else:
         labels = load_labels(labels)
 
-        if input_file.name.endswith(".npy"):
+        if input_file.endswith(".npy"):
             data = load_npy_file(input_file, step, exclude_cols, variance_threshold)
         else:
             data = load_text_file(
@@ -648,209 +655,205 @@ def run_tsne(
 
 
 if __name__ == "__main__":
-    if "DatasetLoader.get_datasets" in sys.modules:
-        global available_datasets
-        available_datasets = get_datasets._get_available_datasets()
+    run_tsne("dialanine.npy", 10, no_dims=2, perplexity=30)
+    # available_datasets = []
+    # if "NeuralTSNE.DatasetLoader.get_datasets" in sys.modules:
+    #     available_datasets = get_datasets._get_available_datasets()
 
-    parser = argparse.ArgumentParser(description="t-SNE Algorithm")
-    parser.add_argument(
-        "input_file",
-        type=FileTypeWithExtensionCheckWithPredefinedDatasets(
-            valid_extensions=("txt", "data", "npy")
-        ),
-        help="Input file",
-    )
-    parser.add_argument(
-        "-iter", type=int, default=1000, help="Number of iterations", required=False
-    )
-    parser.add_argument(
-        "-labels",
-        type=FileTypeWithExtensionCheck(valid_extensions=("txt", "data")),
-        help="Labels file",
-        required=False,
-    )
-    parser.add_argument(
-        "-no_dims", type=int, help="Number of dimensions", required=True, default=2
-    )
-    parser.add_argument(
-        "-perplexity",
-        type=float,
-        help="Perplexity of the Gaussian kernel",
-        required=True,
-        default=30.0,
-    )
-    parser.add_argument(
-        "-exclude_cols", type=int, nargs="+", help="Columns to exclude", required=False
-    )
-    parser.add_argument(
-        "-step", type=int, help="Step between samples", required=False, default=1
-    )
-    parser.add_argument(
-        "-exaggeration_iter",
-        type=int,
-        help="Early exaggeration end",
-        required=False,
-        default=0,
-    )
-    parser.add_argument(
-        "-exaggeration_value",
-        type=float,
-        help="Early exaggeration value",
-        required=False,
-        default=12,
-    )
-    parser.add_argument(
-        "-o", type=str, help="Output filename", required=False, default="result.txt"
-    )
-    parser.add_argument(
-        "-model_save",
-        type=str,
-        help="Model save filename",
-        required=False,
-    )
-    parser.add_argument(
-        "-model_load",
-        type=str,
-        help="Model filename to load",
-        required=False,
-    )
-    parser.add_argument("-shuffle", action="store_true", help="Shuffle data")
-    parser.add_argument(
-        "-train_size",
-        type=float,
-        action=range_action(0, 1),
-        help="Train size",
-        required=False,
-    )
-    parser.add_argument(
-        "-test_size",
-        type=float,
-        action=range_action(0, 1),
-        help="Test size",
-        required=False,
-    )
-    parser.add_argument(
-        "-jobs", type=int, help="Number of jobs", required=False, default=1
-    )
-    parser.add_argument(
-        "-batch_size", type=int, help="Batch size", required=False, default=1000
-    )
-
-    parser.add_argument("-header", action="store_true", help="Data has header")
-    parser.add_argument(
-        "-net_multipliers",
-        type=float,
-        nargs="+",
-        help="Network multipliers",
-        default=[0.75, 0.75, 0.75],
-    )
-    parser.add_argument("-variance_threshold", type=float, help="Variance threshold")
-    parser.add_argument("-cpu", action="store_true", help="Use CPU")
-    parser.add_argument(
-        "-early_stopping_delta", type=float, help="Early stopping delta", default=1e-5
-    )
-    parser.add_argument(
-        "-early_stopping_patience", type=int, help="Early stopping patience", default=3
-    )
-    parser.add_argument("-lr", type=float, help="Learning rate", default=1e-3)
-    parser.add_argument("-auto_lr", action="store_true", help="Auto learning rate")
-
-    # args = parser.parse_args(
-    #     [
-    #         "mnist",
-    #         "-no_dims",
-    #         "2",
-    #         "-perplexity",
-    #         "30",
-    #     ]
+    # parser = argparse.ArgumentParser(description="t-SNE Algorithm")
+    # parser.add_argument(
+    #     "input_file",
+    #     type=FileTypeWithExtensionCheckWithPredefinedDatasets(
+    #         valid_extensions=("txt", "data", "npy"),
+    #         available_datasets=available_datasets,
+    #     ),
+    #     help="Input file",
+    # )
+    # parser.add_argument(
+    #     "-iter", type=int, default=1000, help="Number of iterations", required=False
+    # )
+    # parser.add_argument(
+    #     "-labels",
+    #     type=FileTypeWithExtensionCheck(valid_extensions=("txt", "data")),
+    #     help="Labels file",
+    #     required=False,
+    # )
+    # parser.add_argument(
+    #     "-no_dims", type=int, help="Number of dimensions", required=True, default=2
+    # )
+    # parser.add_argument(
+    #     "-perplexity",
+    #     type=float,
+    #     help="Perplexity of the Gaussian kernel",
+    #     required=True,
+    #     default=30.0,
+    # )
+    # parser.add_argument(
+    #     "-exclude_cols", type=int, nargs="+", help="Columns to exclude", required=False
+    # )
+    # parser.add_argument(
+    #     "-step", type=int, help="Step between samples", required=False, default=1
+    # )
+    # parser.add_argument(
+    #     "-exaggeration_iter",
+    #     type=int,
+    #     help="Early exaggeration end",
+    #     required=False,
+    #     default=0,
+    # )
+    # parser.add_argument(
+    #     "-exaggeration_value",
+    #     type=float,
+    #     help="Early exaggeration value",
+    #     required=False,
+    #     default=12,
+    # )
+    # parser.add_argument(
+    #     "-o", type=str, help="Output filename", required=False, default="result.txt"
+    # )
+    # parser.add_argument(
+    #     "-model_save",
+    #     type=str,
+    #     help="Model save filename",
+    #     required=False,
+    # )
+    # parser.add_argument(
+    #     "-model_load",
+    #     type=str,
+    #     help="Model filename to load",
+    #     required=False,
+    # )
+    # parser.add_argument("-shuffle", action="store_true", help="Shuffle data")
+    # parser.add_argument(
+    #     "-train_size",
+    #     type=float,
+    #     action=range_action(0, 1),
+    #     help="Train size",
+    #     required=False,
+    # )
+    # parser.add_argument(
+    #     "-test_size",
+    #     type=float,
+    #     action=range_action(0, 1),
+    #     help="Test size",
+    #     required=False,
+    # )
+    # parser.add_argument(
+    #     "-jobs", type=int, help="Number of jobs", required=False, default=1
+    # )
+    # parser.add_argument(
+    #     "-batch_size", type=int, help="Batch size", required=False, default=1000
     # )
 
-    args = parser.parse_args()
+    # parser.add_argument("-header", action="store_true", help="Data has header")
+    # parser.add_argument(
+    #     "-net_multipliers",
+    #     type=float,
+    #     nargs="+",
+    #     help="Network multipliers",
+    #     default=[0.75, 0.75, 0.75],
+    # )
+    # parser.add_argument("-variance_threshold", type=float, help="Variance threshold")
+    # parser.add_argument("-cpu", action="store_true", help="Use CPU")
+    # parser.add_argument(
+    #     "-early_stopping_delta", type=float, help="Early stopping delta", default=1e-5
+    # )
+    # parser.add_argument(
+    #     "-early_stopping_patience", type=int, help="Early stopping patience", default=3
+    # )
+    # parser.add_argument("-lr", type=float, help="Learning rate", default=1e-3)
+    # parser.add_argument("-auto_lr", action="store_true", help="Auto learning rate")
 
-    skip_data_splitting = False
-    if (
-        not isinstance(args.input_file, io.TextIOWrapper)
-        and len(available_datasets) > 0
-        and (name := args.input_file.lower()) in available_datasets
-    ):
-        train, test = load_torch_dataset(name, args.step, args.o)
-        skip_data_splitting = True
-        features = np.prod(train.dataset.data.shape[1:])
-    else:
-        labels = load_labels(args.labels)
+    # args = parser.parse_args(
+    #     ["dialanine.npy", "-no_dims", "2", "-perplexity", "30", "-iter", "10"]
+    # )
 
-        if args.input_file.name.endswith(".npy"):
-            data = load_npy_file(
-                args.input_file, args.step, args.exclude_cols, args.variance_threshold
-            )
-        else:
-            data = load_text_file(
-                args.input_file,
-                args.step,
-                args.header,
-                args.exclude_cols,
-                args.variance_threshold,
-            )
-        features = data.shape[1]
+    # args = parser.parse_args()
 
-    tsne = ParametricTSNE(
-        loss_fn="kl_divergence",
-        n_components=args.no_dims,
-        perplexity=args.perplexity,
-        batch_size=args.batch_size,
-        early_exaggeration_epochs=args.exaggeration_iter,
-        early_exaggeration_value=args.exaggeration_value,
-        max_iterations=args.iter,
-        features=features,
-        multipliers=args.net_multipliers,
-        n_jobs=args.jobs,
-        force_cpu=args.cpu,
-    )
+    # skip_data_splitting = False
+    # if (
+    #     not isinstance(args.input_file, io.TextIOWrapper)
+    #     and len(available_datasets) > 0
+    #     and (name := args.input_file.lower()) in available_datasets
+    # ):
+    #     train, test = load_torch_dataset(name, args.step, args.o)
+    #     skip_data_splitting = True
+    #     features = np.prod(train.dataset.data.shape[1:])
+    # else:
+    #     labels = load_labels(args.labels)
 
-    early_stopping = EarlyStopping(
-        "train_loss_epoch",
-        min_delta=args.early_stopping_delta,
-        patience=args.early_stopping_patience,
-    )
+    #     if args.input_file.name.endswith(".npy"):
+    #         data = load_npy_file(
+    #             args.input_file, args.step, args.exclude_cols, args.variance_threshold
+    #         )
+    #     else:
+    #         data = load_text_file(
+    #             args.input_file,
+    #             args.step,
+    #             args.header,
+    #             args.exclude_cols,
+    #             args.variance_threshold,
+    #         )
+    #     features = data.shape[1]
 
-    is_gpu = tsne.device == torch.device("cuda:0")
-    trainer = L.Trainer(
-        accelerator="gpu" if is_gpu else "cpu",
-        devices=1 if is_gpu else tsne.n_jobs,
-        log_every_n_steps=1,
-        max_epochs=tsne.max_iterations,
-        callbacks=[early_stopping],
-    )
+    # tsne = ParametricTSNE(
+    #     loss_fn="kl_divergence",
+    #     n_components=args.no_dims,
+    #     perplexity=args.perplexity,
+    #     batch_size=args.batch_size,
+    #     early_exaggeration_epochs=args.exaggeration_iter,
+    #     early_exaggeration_value=args.exaggeration_value,
+    #     max_iterations=args.iter,
+    #     features=features,
+    #     multipliers=args.net_multipliers,
+    #     n_jobs=args.jobs,
+    #     force_cpu=args.cpu,
+    # )
 
-    classifier = Classifier(tsne, args.shuffle, lr=args.lr)
+    # early_stopping = EarlyStopping(
+    #     "train_loss_epoch",
+    #     min_delta=args.early_stopping_delta,
+    #     patience=args.early_stopping_patience,
+    # )
 
-    if args.model_load:
-        tsne.read_model(args.model_load)
-        train, test = (
-            tsne.split_dataset(data, y=labels, test_size=1)
-            if not skip_data_splitting
-            else tsne.create_dataloaders(train, test)
-        )
-        if not skip_data_splitting:
-            save_labels_data(args, test)
-        Y = trainer.predict(classifier, test)
-    else:
-        train, test = (
-            tsne.split_dataset(
-                data, y=labels, train_size=args.train_size, test_size=args.test_size
-            )
-            if not skip_data_splitting
-            else tsne.create_dataloaders(train, test)
-        )
-        if args.auto_lr:
-            tuner = Tuner(trainer)
-            tuner.lr_find(tsne.model, train)
-        if not skip_data_splitting:
-            save_labels_data(args, test)
-        trainer.fit(classifier, train)
-        if args.model_save:
-            tsne.save_model(args.model_save)
-        if test is not None:
-            Y = trainer.predict(classifier, test)
+    # is_gpu = tsne.device == torch.device("cuda:0")
+    # trainer = L.Trainer(
+    #     accelerator="gpu" if is_gpu else "cpu",
+    #     devices=1 if is_gpu else tsne.n_jobs,
+    #     log_every_n_steps=1,
+    #     max_epochs=tsne.max_iterations,
+    #     callbacks=[early_stopping],
+    # )
 
-    save_results(args, test, Y)
+    # classifier = Classifier(tsne, args.shuffle, lr=args.lr)
+
+    # if args.model_load:
+    #     tsne.read_model(args.model_load)
+    #     train, test = (
+    #         tsne.split_dataset(data, y=labels, test_size=1)
+    #         if not skip_data_splitting
+    #         else tsne.create_dataloaders(train, test)
+    #     )
+    #     if not skip_data_splitting:
+    #         save_labels_data(args, test)
+    #     Y = trainer.predict(classifier, test)
+    # else:
+    #     train, test = (
+    #         tsne.split_dataset(
+    #             data, y=labels, train_size=args.train_size, test_size=args.test_size
+    #         )
+    #         if not skip_data_splitting
+    #         else tsne.create_dataloaders(train, test)
+    #     )
+    #     if args.auto_lr:
+    #         tuner = Tuner(trainer)
+    #         tuner.lr_find(tsne.model, train)
+    #     if not skip_data_splitting:
+    #         save_labels_data(args, test)
+    #     trainer.fit(classifier, train)
+    #     if args.model_save:
+    #         tsne.save_model(args.model_save)
+    #     if test is not None:
+    #         Y = trainer.predict(classifier, test)
+
+    # save_results(args, test, Y)

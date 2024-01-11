@@ -632,15 +632,15 @@ def parametric_tsne_instance(request):
 def default_parametric_tsne_instance():
     params = {
         "loss_fn": "kl_divergence",
-        "n_components": 3,
+        "n_components": 2,
         "perplexity": 50,
         "batch_size": 10,
         "early_exaggeration_epochs": 10,
         "early_exaggeration_value": 8.0,
         "max_iterations": 500,
-        "features": 512,
+        "features": 15,  # TODO: Add the ability to inject crucial params as in Classifier class
         "multipliers": [1.0, 1.5],
-        "n_jobs": 2,
+        "n_jobs": 6,
         "tolerance": 1e-6,
         "force_cpu": True,
     }
@@ -993,7 +993,7 @@ def test_kl_divergence(
 
 # endregion
 
-# TODO: Test Classifier
+# region Test Classifier
 
 
 @pytest.fixture
@@ -1008,6 +1008,20 @@ def classifier_instance(request, default_parametric_tsne_instance):
         ), params | {
             "tsne": default_parametric_tsne_instance[0]
         }, mock_exaggeration_status
+
+
+@pytest.fixture(params=[None])
+def default_classifier_instance(request, default_parametric_tsne_instance):
+    tsne_params = request.param or {}
+    params = {"shuffle": True, "optimizer": "rmsprop", "lr": 1e-6}
+    tsne_instance, default_tsne_params = default_parametric_tsne_instance
+    for k, v in tsne_params.items():
+        tsne_instance.__dict__[k] = v
+    return tsne.Classifier(tsne=tsne_instance, **params), {
+        "tsne_params": tsne_params,
+        "default_tsne_params": default_tsne_params,
+        "params": params,
+    }
 
 
 @pytest.mark.parametrize(
@@ -1035,6 +1049,70 @@ def test_classifier_init(classifier_instance):
     assert classifier_instance.lr == params["lr"]
     assert classifier_instance.optimizer == params["optimizer"]
     assert mock_exaggeration_status.call_count == 1
+
+
+@pytest.mark.parametrize(
+    "default_classifier_instance",
+    [{"early_exaggeration_epochs": 0}, {"early_exaggeration_epochs": 10}],
+    indirect=True,
+)
+def test_reset_exaggeration_status(default_classifier_instance):
+    classifier_instance, params = default_classifier_instance
+    classifier_instance.reset_exaggeration_status()
+
+    params = params["tsne_params"]
+    if params["early_exaggeration_epochs"] == 0:
+        assert classifier_instance.has_exaggeration_ended == True
+    else:
+        assert classifier_instance.has_exaggeration_ended == False
+
+
+@pytest.mark.parametrize(
+    "optimizer, expected_instance",
+    [
+        ("adam", torch.optim.Adam),
+        ("sgd", torch.optim.SGD),
+        ("rmsprop", torch.optim.RMSprop),
+    ],
+)
+def test_set_optimizer(
+    default_classifier_instance,
+    optimizer: str,
+    expected_instance: torch.optim.Optimizer,
+):
+    classifier_instance, _ = default_classifier_instance
+
+    returned = classifier_instance._set_optimizer(
+        optimizer, {"lr": classifier_instance.lr}
+    )
+    assert isinstance(returned, expected_instance)
+    assert returned.param_groups[0]["lr"] == classifier_instance.lr
+
+
+@pytest.mark.parametrize("optimizer", ["dummy_optimizer", "adom"])
+def test_set_optimizer_invalid(default_classifier_instance, optimizer: str):
+    classifier_instance, _ = default_classifier_instance
+
+    with pytest.raises(ValueError):
+        classifier_instance._set_optimizer(optimizer, {"lr": classifier_instance.lr})
+
+
+def test_predict_step(default_classifier_instance):
+    classifier_instance, params = default_classifier_instance
+    tsne_instance = classifier_instance.tsne
+    num_samples = tsne_instance.batch_size * 10
+    dataset = MyDataset(num_samples, 15)
+    test_data = DataLoaderMock(dataset, batch_size=tsne_instance.batch_size)
+
+    for i, batch in enumerate(test_data):
+        logits = classifier_instance.predict_step(batch, i)
+        assert logits.shape == (
+            tsne_instance.batch_size,
+            params["default_tsne_params"]["n_components"],
+        )
+
+
+# endregion
 
 
 # region Test FileTypeWithExtensionCheck

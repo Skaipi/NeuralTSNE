@@ -40,9 +40,9 @@ jobs:
         run: |
           mkdir -p $COVERAGE_DIR/html_report
           pytest -c $MAIN_DIR/pyproject.toml --cov=$MAIN_DIR --cov-report=json:$COVERAGE_DIR/coverage.json --cov-report=html:$COVERAGE_DIR/coverage --html=$COVERAGE_DIR/html_report/report.html
-      - name: Create main index file # this file should contain three links to the coverage html. coverage json file and test report html
+      - name: Create main index file
         run: |
-          echo "<html><head><title>NeuralTSNE</title></head><body><h1>NeuralTSNE</h1><p>Test report: <a href=\"report.html\">report.html</a></p><p>Coverage report: <a href=\"coverage/index.html\">index.html</a></p><p>Coverage json: <a href=\"coverage.json\">coverage.json</a></p></body></html>" > $COVERAGE_DIR/index.html
+          echo "<html><head><title>NeuralTSNE</title></head><body><h1>NeuralTSNE</h1><p>Test report: <a href=\"html_report/report.html\">report.html</a></p><p>Coverage report: <a href=\"coverage/index.html\">index.html</a></p><p>Coverage json: <a href=\"coverage.json\">coverage.json</a></p></body></html>" > $COVERAGE_DIR/index.html
       - name: Fix permissions in coverage directory
         run: |
           chmod -c -R +rX "$COVERAGE_DIR/"

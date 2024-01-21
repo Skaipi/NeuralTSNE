@@ -40,7 +40,7 @@ def plot(data, labels, is_fashion=False, img_file=None):
     sns.scatterplot(
         x=data[:, 0],
         y=data[:, 1],
-        hue=labels[: len(data)],
+        hue=map(lambda x: classes[x], labels[: len(data)]),
         palette="Paired",
         legend="full",
     )

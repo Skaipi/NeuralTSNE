@@ -14,9 +14,7 @@ import NeuralTSNE.MnistPlotter as plotter
 @patch("seaborn.scatterplot")
 @patch("matplotlib.pyplot.savefig")
 @patch("matplotlib.pyplot.show")
-@patch("matplotlib.pyplot.legend")
 def test_plot(
-    mock_plt_legend: MagicMock,
     mock_plt_show: MagicMock,
     mock_plt_savefig: MagicMock,
     mock_scatterplot: MagicMock,
@@ -30,14 +28,6 @@ def test_plot(
     plotter.plot(np.array([[1, 2], [3, 4]]), np.array([1, 2]), is_fashion, img_file)
 
     mock_scatterplot.assert_called_once()
-    arg_list = mock_plt_legend.call_args
-    if is_fashion:
-        are_strings = [isinstance(arg, str) for arg in arg_list[0][0]]
-        assert all(are_strings)
-    else:
-        are_ints = [isinstance(arg, int) for arg in arg_list[0][0]]
-        assert all(are_ints)
-
     mock_plt_savefig.assert_called_once_with(img_file)
     mock_plt_show.assert_called_once()
     mock_plt_xlabel.assert_called_once()

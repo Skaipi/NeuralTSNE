@@ -1,7 +1,3 @@
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "NeuralTSNE"
 # version = "0.1.0"
@@ -48,3 +44,7 @@ version = { attr = "NeuralTSNE.__version__" }
 
 [tool.pytest.ini_options]
 markers = ["valid_file", "invalid_file"]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"

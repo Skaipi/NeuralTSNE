@@ -2,18 +2,7 @@ import argparse
 
 import matplotlib.pyplot as plt
 import numpy as np
-
-
-class FileTypeWithExtensionCheck(argparse.FileType):
-    def __init__(self, mode="r", valid_extensions=None, **kwargs):
-        super().__init__(mode, **kwargs)
-        self.valid_extensions = valid_extensions
-
-    def __call__(self, string):
-        if self.valid_extensions:
-            if not string.endswith(self.valid_extensions):
-                raise argparse.ArgumentTypeError("Not a valid filename extension!")
-        return super().__call__(string)
+from NeuralTSNE.TSNE import FileTypeWithExtensionCheck
 
 
 def plot(
@@ -26,6 +15,23 @@ def plot(
     img_file=None,
     kwargs=None,
 ):
+    """
+    Plot t-SNE results.
+
+    ---
+    ### Parameters:
+        - `data`: t-SNE data to be plotted.
+        - `labels`: Labels corresponding to the data points.
+        - `step` (`int`): Step size for subsampling the data.
+        - `marker_size`: Marker size for the scatter plot.
+        - `alpha`: Alpha value for transparency in the scatter plot.
+        - `are_neural_labels` (`bool`, optional): Flag indicating whether the labels are neural network predictions.
+        - `img_file` (`str`, optional): File path to save the plot as an image.
+        - `kwargs` (`dict`, optional): Additional keyword arguments.
+            - `file_step` (`int`, optional): Step size for subsampling labels. Default is 1.
+
+    This function plots the t-SNE results with scatter plot, allowing customization of various plot parameters.
+    """
     if kwargs is None:
         kwargs = {}
     f_step = kwargs.get("file_step", 1)
@@ -59,6 +65,21 @@ def plot(
 def plot_from_file(
     file, labels_file, columns, step, marker_size, alpha, are_neural_labels=False
 ):
+    """
+    Plot t-SNE results from file.
+
+    ---
+    ### Parameters:
+        - `file` (`str`): File path containing t-SNE data.
+        - `labels_file` (`str`): File path containing labels data.
+        - `columns` (`List[int]`): Column indices to load from the labels file.
+        - `step` (`int`): Step size for subsampling the data.
+        - `marker_size`: Marker size for the scatter plot.
+        - `alpha`: Alpha value for transparency in the scatter plot.
+        - `are_neural_labels` (`bool`, optional): Flag indicating whether the labels are neural network predictions.
+
+    This function reads t-SNE data and labels from files, applies subsampling, and plots the results using the `plot` function.
+    """
     data = None
     file_step = None
 

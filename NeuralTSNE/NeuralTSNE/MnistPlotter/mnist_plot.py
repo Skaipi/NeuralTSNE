@@ -3,21 +3,22 @@ import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-
-
-class FileTypeWithExtensionCheck(argparse.FileType):
-    def __init__(self, mode="r", valid_extensions=None, **kwargs):
-        super().__init__(mode, **kwargs)
-        self.valid_extensions = valid_extensions
-
-    def __call__(self, string):
-        if self.valid_extensions:
-            if not string.endswith(self.valid_extensions):
-                raise argparse.ArgumentTypeError("Not a valid filename extension!")
-        return super().__call__(string)
+from NeuralTSNE.TSNE import FileTypeWithExtensionCheck
 
 
 def plot(data, labels, is_fashion=False, img_file=None):
+    """
+    Plot t-SNE results of mnist dataset.
+
+    ---
+    ### Parameters:
+        - `data`: t-SNE data to be plotted.
+        - `labels`: Labels corresponding to the data points.
+        - `is_fashion` (`bool`, optional): Flag indicating whether the dataset is a fashion dataset.
+        - `img_file` (`str`, optional): File path to save the plot as an image.
+
+    This function plots the t-SNE results with colored points based on the provided labels.
+    """
     if is_fashion:
         classes = [
             "T-shirt/top",
@@ -37,11 +38,14 @@ def plot(data, labels, is_fashion=False, img_file=None):
     fig, ax = plt.subplots(1, 1)
 
     sns.scatterplot(
-        x=data[:, 0], y=data[:, 1], hue=labels[: len(data)], palette="Paired"
+        x=data[:, 0],
+        y=data[:, 1],
+        hue=labels[: len(data)],
+        palette="Paired",
+        legend="full",
     )
     plt.xlabel("t-SNE 1")
     plt.ylabel("t-SNE 2")
-    plt.legend(classes)
 
     if img_file:
         new_name = img_file
@@ -50,6 +54,17 @@ def plot(data, labels, is_fashion=False, img_file=None):
 
 
 def plot_from_file(file, labels_file, is_fashion=False):
+    """
+    Plot t-SNE results of mnist dataset from file.
+
+    ---
+    ### Parameters:
+        - `file` (`str`): File path containing t-SNE data.
+        - `labels_file` (`str`): File path containing labels data.
+        - `is_fashion` (`bool`, optional): Flag indicating whether the dataset is a fashion dataset.
+
+    This function reads t-SNE data and labels from files and plots the results using the `plot` function.
+    """
     data = None
 
     with open(file, "r") as f:

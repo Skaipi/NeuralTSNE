@@ -39,7 +39,7 @@ jobs:
       - name: Test with pytest
         run: |
           mkdir -p $COVERAGE_DIR/html_report
-          pytest -c $MAIN_DIR/pyproject.toml --cov=$MAIN_DIR --cov-report=json:$COVERAGE_DIR/coverage.json --cov-report:html=$COVERAGE_DIR/coverage --html=$COVERAGE_DIR/html_report/report.html
+          pytest -c $MAIN_DIR/pyproject.toml --cov=$MAIN_DIR --cov-report=json:$COVERAGE_DIR/coverage.json --cov-report:html:html$COVERAGE_DIR/coverage --html=$COVERAGE_DIR/html_report/report.html
       - name: Fix permissions in coverage directory
         run: |
           chmod -c -R +rX "$COVERAGE_DIR/"

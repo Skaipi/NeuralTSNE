@@ -43,5 +43,21 @@ jobs:
       - name: Fix permissions in coverage directory
         run: |
           chmod -c -R +rX "$COVERAGE_DIR/"
-      - name: Upload reports to Github Pages
+      - name: Upload Github Pages artifact
         uses: actions/upload-pages-artifact@v3
+  deploy:
+    needs: build
+
+    permissions:
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Github Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

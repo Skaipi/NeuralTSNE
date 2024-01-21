@@ -6,27 +6,29 @@ name: Python package
 on:
   push:
     branches: ["main"]
-  pull_request:
-    branches: ["main"]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      COVERAGE_DIR: _site
+      MAIN_DIR: NeuralTSNE
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.11"]
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: "pip"
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          python -m pip install flake8 pytest pytest-cov
+          python -m pip install flake8 pytest pytest-cov pytest-html
           pip install NeuralTSNE/.
       - name: Lint with flake8
         run: |
@@ -36,4 +38,10 @@ jobs:
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Test with pytest
         run: |
-          pytest --cov=NeuralTSNE --cov-report=xml --cov-report=html
+          mkdir -p $COVERAGE_DIR/html_report
+          pytest -c $MAIN_DIR/pyproject.toml --cov=$MAIN_DIR --cov-report=json:$COVERAGE_DIR/coverage.json --cov-report=$COVERAGE_DIR/coverage --html=$COVERAGE_DIR/html_report/report.html
+      - name: Fix permissions in coverage directory
+        run: |
+          chmod -c -R +rX "$COVERAGE_DIR/"
+      - name: Upload reports to Github Pages
+        uses: actions/upload-pages-artifact@v3

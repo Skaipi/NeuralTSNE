@@ -30,6 +30,13 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           python -m pip install flake8 pytest pytest-cov pytest-html
           pip install NeuralTSNE/.
+      - name: Extract tag version
+        id: tag
+        run: |
+          echo ::set-output name=TAG_VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
+      - name: Update version
+        run: |
+          sed -i "s/{{VERSION}}/${{ steps.tag.outputs.TAG_VERSION }}/g" $MAIN_DIR/__init__.py
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors or undefined names
@@ -64,3 +71,28 @@ jobs:
       - name: Deploy to Github Pages
         id: deployment
         uses: actions/deploy-pages@v4
+  publish:
+    needs: build
+    if: success()
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+    steps:
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+      - name: Build binary wheel
+        run: |
+          python setup.py sdist bdist_wheel
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_TEST_API_TOKEN }}
+          repository_url: https://test.pypi.org/legacy/

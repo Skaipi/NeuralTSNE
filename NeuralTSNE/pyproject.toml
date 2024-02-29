@@ -1,6 +1,5 @@
 [project]
 name = "NeuralTSNE"
-# version = "0.1.0"
 description = "Implementation of t-SNE in PyTorch with CUDA support and neural network-based initialization"
 # url = ""
 authors = [{ name = "Patryk Tajs", email = "minosyx@gmail.com" }]
@@ -18,8 +17,7 @@ dependencies = [
   "tqdm >= 4.65.0",
   "torchinfo >= 1.8.0",
 ]
-# install_requires = []
-dynamic = ["version"]
+dynamic = ["version"] # TODO: Perform automatic update of version
 readme = "README.md"
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -45,6 +43,13 @@ version = { attr = "NeuralTSNE.__version__" }
 
 [tool.pytest.ini_options]
 markers = ["valid_file", "invalid_file"]
+
+[tool.coverage.run]
+branch = true
+omit = [
+  "__init__.py",
+  "setup.py",
+]
 
 [build-system]
 requires = ["setuptools", "wheel"]

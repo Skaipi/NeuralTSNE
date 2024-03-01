@@ -38,7 +38,7 @@ jobs:
         # python -m pip install flake8 pytest pytest-cov pytest-html
       - name: Build and install package
         run: |
-          python -m build $MAIN_DIR/. --sdist --wheel --outdir ../packaged
+          python -m build $MAIN_DIR/. --sdist --wheel --outdir packaged
         # pip install -e $MAIN_DIR/.
       # - name: Lint with flake8
       #   run: |
@@ -50,10 +50,10 @@ jobs:
       #   run: |
       #     mkdir -p $COVERAGE_DIR/html_report
       #     pytest -c $MAIN_DIR/pyproject.toml --cov=$MAIN_DIR --cov-report=json:$COVERAGE_DIR/coverage.json --cov-report=html:$COVERAGE_DIR/coverage --html=$COVERAGE_DIR/html_report/report.html
-      - name: Print package files
-        run: |
-          ls -l $MAIN_DIR/packaged
-          pwd
+      # - name: Print package files
+      #   run: |
+      #     ls -l $MAIN_DIR/packaged
+      #     pwd
       - name: Upload built artifact
         uses: actions/upload-artifact@v4
         with:

@@ -58,7 +58,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dist
-          path: packaged
+          path: ${{ github.workspace }}/$MAIN_DIR/packaged
           if-no-files-found: error
 
   publish:

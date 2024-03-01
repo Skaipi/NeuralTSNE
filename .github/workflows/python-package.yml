@@ -17,6 +17,8 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.11"]
+    # outputs:
+    #   TAG_VERSION: ${{ steps.tag.outputs.TAG_VERSION }}
 
     steps:
       - uses: actions/checkout@v4
@@ -32,13 +34,13 @@ jobs:
       - name: Extract tag version
         id: tag
         run: |
-          echo ::set-output name=TAG_VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
+          echo "TAG_VERSION=$(echo $GITHUB_REF | cut -d / -f 3)" >> $GITHUB_OUTPUT
       - name: Update version
         run: |
-          sed -i "s/{{VERSION}}/${{ steps.tag.outputs.TAG_VERSION }}/g" $MAIN_DIR/__init__.py
+          sed -i "s/{{VERSION}}/${{ steps.tag.outputs.TAG_VERSION }}/g" $MAIN_DIR/NeuralTSNE/__init__.py
       - name: Build package
         run: |
-          pip install -e NeuralTSNE/.
+          pip install -e $MAIN_DIR/.
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors or undefined names

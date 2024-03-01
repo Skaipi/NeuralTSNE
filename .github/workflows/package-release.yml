@@ -38,7 +38,7 @@ jobs:
           python -m pip install flake8 pytest pytest-cov pytest-html
       - name: Build and install package
         run: |
-          python -m build $MAIN_DIR/.
+          python -m build $MAIN_DIR/. --sdist --wheel --outdir $MAIN_DIR/dist
           pip install -e $MAIN_DIR/.
       - name: Lint with flake8
         run: |

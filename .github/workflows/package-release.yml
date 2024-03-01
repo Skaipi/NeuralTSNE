@@ -38,7 +38,7 @@ jobs:
         # python -m pip install flake8 pytest pytest-cov pytest-html
       - name: Build and install package
         run: |
-          python -m build $MAIN_DIR/. --sdist --wheel --outdir $MAIN_DIR/packaged
+          python -m build $MAIN_DIR/. --sdist --wheel --outdir ../packaged
         # pip install -e $MAIN_DIR/.
       # - name: Lint with flake8
       #   run: |
@@ -58,7 +58,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dist
-          path: ${{ github.workspace }}/$MAIN_DIR/packaged/
+          path: packaged
           if-no-files-found: error
 
   publish:

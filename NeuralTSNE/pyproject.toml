@@ -38,6 +38,9 @@ classifiers = [
   "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
+[tool.setuptools.packages.find]
+exclude = ["packaged"]
+
 [tool.setuptools.dynamic]
 version = { attr = "NeuralTSNE.__version__" }
 

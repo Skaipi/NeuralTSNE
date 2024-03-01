@@ -36,8 +36,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip setuptools wheel
           python -m pip install flake8 pytest pytest-cov pytest-html
-      - name: Build package
+      - name: Build and install package
         run: |
+          python -m build $MAIN_DIR/.
           pip install -e $MAIN_DIR/.
       - name: Lint with flake8
         run: |
@@ -49,38 +50,24 @@ jobs:
         run: |
           mkdir -p $COVERAGE_DIR/html_report
           pytest -c $MAIN_DIR/pyproject.toml --cov=$MAIN_DIR --cov-report=json:$COVERAGE_DIR/coverage.json --cov-report=html:$COVERAGE_DIR/coverage --html=$COVERAGE_DIR/html_report/report.html
-      - name: Create main index file
-        run: |
-          echo "<html><head><title>NeuralTSNE</title></head><body><h1>NeuralTSNE</h1><p>Test report: <a href=\"html_report/report.html\">report.html</a></p><p>Coverage report: <a href=\"coverage/index.html\">index.html</a></p><p>Coverage json: <a href=\"coverage.json\">coverage.json</a></p></body></html>" > $COVERAGE_DIR/index.html
-      - name: Fix permissions in coverage directory
-        run: |
-          chmod -c -R +rX "$COVERAGE_DIR/"
-      - name: Upload Github Pages artifact
-        uses: actions/upload-pages-artifact@v3
-  deploy:
-    needs: build
+      - name: Upload built artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: $MAIN_DIR/dist
 
-    permissions:
-      pages: write
-      id-token: write
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to Github Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
   publish:
     needs: build
     if: success()
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
+      - name: Download built artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          user: __token__
-          password: ${{ secrets.PYPI_TEST_API_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
+          repository-url: https://test.pypi.org/legacy/

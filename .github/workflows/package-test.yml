@@ -78,5 +78,7 @@ jobs:
 
   run_release:
     needs: build
+    permissions:
+      id-token: write
     if: needs.build.outputs.pytest-outcome == 'success' && github.ref_type == 'tag'
     uses: ./.github/workflows/package-release.yml

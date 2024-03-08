@@ -1,12 +1,11 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
-name: Python package
+name: Release
 
 on:
-  push:
-    tags: ["v*.*.*"]
-
+  workflow_call:
+    
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -35,25 +34,9 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel build
-        # python -m pip install flake8 pytest pytest-cov pytest-html
       - name: Build and install package
         run: |
           python -m build $MAIN_DIR/. --sdist --wheel --outdir packaged
-        # pip install -e $MAIN_DIR/.
-      # - name: Lint with flake8
-      #   run: |
-      #     # stop the build if there are Python syntax errors or undefined names
-      #     flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-      #     # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-      #     flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-      # - name: Test with pytest
-      #   run: |
-      #     mkdir -p $COVERAGE_DIR/html_report
-      #     pytest -c $MAIN_DIR/pyproject.toml --cov=$MAIN_DIR --cov-report=json:$COVERAGE_DIR/coverage.json --cov-report=html:$COVERAGE_DIR/coverage --html=$COVERAGE_DIR/html_report/report.html
-      # - name: Print package files
-      #   run: |
-      #     ls -l $MAIN_DIR/packaged
-      #     pwd
       - name: Upload built artifact
         uses: actions/upload-artifact@v4
         with:

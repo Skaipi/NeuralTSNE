@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
-name: Python package test
+name: Test
 
 on:
   push:
@@ -18,6 +18,8 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.11"]
+    outputs:
+      pytest-outcome: ${{ steps.pytest.outcome }}
 
     steps:
       - uses: actions/checkout@v4
@@ -43,6 +45,8 @@ jobs:
           # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
       - name: Test with pytest
+        id: pytest
+        continue-on-error: true
         run: |
           mkdir -p $COVERAGE_DIR/html_report
           pytest -c $MAIN_DIR/pyproject.toml --cov=$MAIN_DIR --cov-report=json:$COVERAGE_DIR/coverage.json --cov-report=html:$COVERAGE_DIR/coverage --html=$COVERAGE_DIR/html_report/report.html
@@ -54,6 +58,7 @@ jobs:
           chmod -c -R +rX "$COVERAGE_DIR/"
       - name: Upload Github Pages artifact
         uses: actions/upload-pages-artifact@v3
+      
   deploy:
     needs: build
 
@@ -70,3 +75,8 @@ jobs:
       - name: Deploy to Github Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  run_release:
+    needs: build
+    if: needs.build.outputs.pytest-outcome == 'success' && github.ref_type == 'tag'
+    uses: ./.github/workflows/package-release.yml

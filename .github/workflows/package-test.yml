@@ -6,6 +6,8 @@ name: Test
 on:
   push:
     branches: ["main"]
+    tags-ignore: ["*"]
+  release: # This workflow will run only when a new release is created
 
 jobs:
   build:
@@ -80,5 +82,6 @@ jobs:
     needs: build
     permissions:
       id-token: write
-    if: needs.build.outputs.pytest-outcome == 'success' && github.ref_type == 'tag'
+    # Only run if the pytest-outcome is success and if the tag is present when the event is push
+    if: needs.build.outputs.pytest-outcome == 'success' && contains(github.event_name, 'push') && startsWith(github.ref, 'refs/tags/')
     uses: ./.github/workflows/package-release.yml

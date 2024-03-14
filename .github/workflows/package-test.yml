@@ -1,44 +1,42 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
-
 name: Test
 
 on:
-  push:
-    branches: ["main"]
-  create:  
+  workflow_call:
+    inputs:
+      release:
+        type: boolean
+        required: true
+        description: "Whether to release the package"
+      version:
+        type: string
+        required: true
+        description: "Version of the package"
 
 jobs:
   build:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     env:
       COVERAGE_DIR: _site
       MAIN_DIR: NeuralTSNE
-      DUMMY_TAG: 0.0.1
+      TAG_VERSION: ${{ inputs.version }}
     strategy:
       fail-fast: false
       matrix:
         python-version: ["3.11"]
     outputs:
       pytest-outcome: ${{ steps.pytest.outcome }}
-      get-tag-version: ${{ steps.tag.outputs.TAG_VERSION }}
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-tags: true
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
-      - name: Get annotated tag if present
-        continue-on-error: true
-        id: tag
-        run: echo "TAG_VERSION=$(git describe --candidates=0)" >> $GITHUB_OUTPUT
       - name: Update version
         run: |
-          sed -i "s/{{VERSION}}/${DUMMY_TAG}/g" $MAIN_DIR/NeuralTSNE/__init__.py
+          sed -i "s/{{VERSION}}/${TAG_VERSION}/g" $MAIN_DIR/NeuralTSNE/__init__.py
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel
@@ -66,7 +64,7 @@ jobs:
           chmod -c -R +rX "$COVERAGE_DIR/"
       - name: Upload Github Pages artifact
         uses: actions/upload-pages-artifact@v3
-      
+
   deploy:
     needs: build
 
@@ -90,7 +88,7 @@ jobs:
       id-token: write
       contents: read
 
-    if: needs.build.outputs.pytest-outcome == 'success' && needs.build.outputs.get-tag-version != ''
+    if: needs.build.outputs.pytest-outcome == 'success' && inputs.release == true
     uses: ./.github/workflows/package-release.yml
     with:
-        TAG_VERSION: ${{ needs.build.outputs.get-tag-version }}
+      TAG_VERSION: ${{ inputs.version }}

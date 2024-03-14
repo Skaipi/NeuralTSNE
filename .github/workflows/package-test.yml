@@ -22,9 +22,7 @@ jobs:
         python-version: ["3.11"]
     outputs:
       pytest-outcome: ${{ steps.pytest.outcome }}
-      get-tag-outcome: ${{ steps.tag.outcome }}
       get-tag-version: ${{ steps.tag.outputs.TAG_VERSION }}
-
 
     steps:
       - uses: actions/checkout@v4
@@ -89,8 +87,9 @@ jobs:
     needs: build
     permissions:
       id-token: write
-    # Only run if the pytest-outcome is success and if the tag is present when the event is push
-    if: needs.build.outputs.pytest-outcome == 'success' && needs.build.outputs.get-tag-outcome == 'success'
+      contents: read
+
+    if: needs.build.outputs.pytest-outcome == 'success' && needs.build.outputs.get-tag-version != ''
     uses: ./.github/workflows/package-release.yml
     with:
         TAG_VERSION: ${{ needs.build.outputs.get-tag-version }}

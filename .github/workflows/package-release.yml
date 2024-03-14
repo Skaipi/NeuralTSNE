@@ -25,7 +25,7 @@ jobs:
     steps:
       - name: Check tag
         run: |
-          if [[ ! ${{ github.event.inputs.TAG_VERSION }} =~ ^v[0-9]+\.[0-9]+\.[0-9]+(\.dev[0-9]+)?$ ]]; then
+          if [[ ! ${{ inputs.TAG_VERSION }} =~ ^v[0-9]+\.[0-9]+\.[0-9]+(\.dev[0-9]+)?$ ]]; then
             echo "Tag version is not in the correct format. It should be vX.X.X[.devX]"
             exit 1
           fi
@@ -37,7 +37,7 @@ jobs:
           cache: "pip"
       - name: Update version
         run: |
-          sed -i "s/{{VERSION}}/${{ github.event.inputs.TAG_VERSION }}/g" $MAIN_DIR/NeuralTSNE/__init__.py
+          sed -i "s/{{VERSION}}/${{ inputs.TAG_VERSION }}/g" $MAIN_DIR/NeuralTSNE/__init__.py
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip setuptools wheel build

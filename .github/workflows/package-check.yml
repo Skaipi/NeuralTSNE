@@ -23,7 +23,8 @@ jobs:
   check_on_push:
     runs-on: ubuntu-latest
     outputs:
-      TAG_VERSION: ${{ steps.check_tag.outputs.TAG_VERSION }}
+      version: ${{ steps.check_tag.outputs.TAG_VERSION }}
+      release: ${{ steps.check_tag.outputs.TAG_VERSION != '0.0.1' }}
 
     if: github.ref_type == 'branch'
     steps:
@@ -47,5 +48,5 @@ jobs:
 
     uses: ./.github/workflows/package-test.yml
     with:
-      version: ${{ needs.check_on_push.outputs.TAG_VERSION }}
-      release: false
+      version: ${{ needs.check_on_push.outputs.version }}
+      release: ${{ needs.check_on_push.outputs.release }}

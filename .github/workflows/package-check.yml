@@ -49,4 +49,4 @@ jobs:
     uses: ./.github/workflows/package-test.yml
     with:
       version: ${{ needs.check_on_push.outputs.version }}
-      release: ${{ needs.check_on_push.outputs.release }}
+      release: ${{ needs.check_on_push.outputs.release == 'true' }}

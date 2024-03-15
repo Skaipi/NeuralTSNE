@@ -4,20 +4,33 @@ on:
   push:
     branches: ["main"]
     tags:
-      - "v+([0-9]).+([0-9]).+([0-9])?(.dev+([0-9]))"
+      - "v*"
 
 jobs:
+  check_on_tag:
+    runs-on: ubuntu-latest
+
+    if: github.ref_type == 'tag'
+    steps:
+      - name: Check if tag in correct format
+        run: |
+          if [[ ! ${{ github.ref_name }} =~ ^v[0-9]+\.[0-9]+\.[0-9]+(\.dev[0-9]+)?$ ]]; then
+            echo "Tag version is not in the correct format. It should be vX.X.X[.devX]"
+            exit 1
+          fi
+
   run_on_tag:
+    needs: check_on_tag
+    if: success()
     permissions:
       contents: read
       pull-requests: write
       pages: write
       id-token: write
 
-    if: github.ref_type == 'tag'
     uses: ./.github/workflows/package-test.yml
     with:
-      version: ${{ github.ref }}
+      version: ${{ github.ref_name }}
       release: true
 
   check_on_push:
@@ -47,6 +60,7 @@ jobs:
 
   run_on_push:
     needs: check_on_push
+    if: success()
     permissions:
       contents: read
       pull-requests: write

@@ -39,6 +39,12 @@ jobs:
 
   run_on_push:
     needs: check_on_push
+    permissions:
+      contents: read
+      pull-requests: write
+      pages: write
+      id-token: write
+
     uses: ./.github/workflows/package-test.yml
     with:
       version: ${{ needs.check_on_push.outputs.TAG_VERSION }}

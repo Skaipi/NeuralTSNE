@@ -47,13 +47,6 @@ version = { attr = "NeuralTSNE.__version__" }
 [tool.pytest.ini_options]
 markers = ["valid_file", "invalid_file"]
 
-[tool.coverage.run]
-branch = true
-omit = [
-  "__init__.py",
-  "setup.py",
-]
-
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"

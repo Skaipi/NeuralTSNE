@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.check_tag.outputs.TAG_VERSION }}
-      release: ${{ steps.check_tag.outputs.TAG_VERSION != '0.0.1' }}
+      exists: ${{ steps.check_tag.outputs.TAG_VERSION != '0.0.1' }}
 
     if: github.ref_type == 'branch'
     steps:
@@ -50,17 +50,10 @@ jobs:
         run: |
           TAG_VERSION=$(git describe --candidates=0 2>/dev/null || echo "0.0.1")
           echo "TAG_VERSION=$TAG_VERSION" >> $GITHUB_OUTPUT
-      - name: Check if tag in correct format
-        if: ${{ steps.check_tag.outputs.TAG_VERSION != '0.0.1' }}
-        run: |
-          if [[ ! ${{ steps.check_tag.outputs.TAG_VERSION }} =~ ^v[0-9]+\.[0-9]+\.[0-9]+(\.dev[0-9]+)?$ ]]; then
-            echo "Tag version is not in the correct format. It should be vX.X.X[.devX]"
-            exit 1
-          fi
 
   run_on_push:
     needs: check_on_push
-    if: success()
+    if: success() && ${{ needs.check_on_push.outputs.exists != 'true' }}
     permissions:
       contents: read
       pull-requests: write
@@ -70,4 +63,4 @@ jobs:
     uses: ./.github/workflows/package-test.yml
     with:
       version: ${{ needs.check_on_push.outputs.version }}
-      release: ${{ needs.check_on_push.outputs.release == 'true' }}
+      release: false

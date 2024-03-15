@@ -4,7 +4,7 @@ on:
   push:
     branches: ["main"]
     tags:
-      - "v[0-9]+.[0-9]+.[0-9]+(.dev[0-9]+)?"
+      - "v+([0-9]).+([0-9]).+([0-9])?(.dev+([0-9]))"
 
 jobs:
   run_on_tag:
@@ -37,6 +37,13 @@ jobs:
         run: |
           TAG_VERSION=$(git describe --candidates=0 2>/dev/null || echo "0.0.1")
           echo "TAG_VERSION=$TAG_VERSION" >> $GITHUB_OUTPUT
+      - name: Check if tag in correct format
+        if: ${{ steps.check_tag.outputs.TAG_VERSION != '0.0.1' }}
+        run: |
+          if [[ ! ${{ steps.check_tag.outputs.TAG_VERSION }} =~ ^v[0-9]+\.[0-9]+\.[0-9]+(\.dev[0-9]+)?$ ]]; then
+            echo "Tag version is not in the correct format. It should be vX.X.X[.devX]"
+            exit 1
+          fi
 
   run_on_push:
     needs: check_on_push

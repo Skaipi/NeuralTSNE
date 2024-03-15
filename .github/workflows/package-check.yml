@@ -20,14 +20,12 @@ jobs:
       version: ${{ github.ref }}
       release: true
 
-  run_on_push:
+  check_on_push:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-      pages: write
-      id-token: write
+    outputs:
+      TAG_VERSION: ${{ steps.check_tag.outputs.TAG_VERSION }}
 
+    if: github.ref_type == 'branch'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,10 +33,13 @@ jobs:
       - name: Check if commit tag exists
         id: check_tag
         continue-on-error: true
-        run: echo "TAG_VERSION=$(git describe --candidates=0)" >> $GITHUB_OUTPUT
-      - name: Run test on push
-        if: steps.check_tag.outputs.TAG_VERSION == ''
-        uses: ./.github/workflows/package-test.yml
-        with:
-          version: 0.0.1
-          release: false
+        run: |
+          TAG_VERSION=$(git describe --candidates=0 2>/dev/null || echo "0.0.1")
+          echo "TAG_VERSION=$TAG_VERSION" >> $GITHUB_OUTPUT
+
+  run_on_push:
+    needs: check_on_push
+    uses: ./.github/workflows/package-test.yml
+    with:
+      version: ${{ needs.check_on_push.outputs.TAG_VERSION }}
+      release: false

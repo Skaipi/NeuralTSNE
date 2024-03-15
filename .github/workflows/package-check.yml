@@ -53,7 +53,7 @@ jobs:
 
   run_on_push:
     needs: check_on_push
-    if: success() && ${{ needs.check_on_push.outputs.exists != 'true' }}
+    if: success() && ${{ needs.check_on_push.outputs.exists != true }}
     permissions:
       contents: read
       pull-requests: write

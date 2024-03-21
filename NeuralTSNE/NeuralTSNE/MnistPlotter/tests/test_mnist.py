@@ -1,8 +1,8 @@
-from unittest.mock import MagicMock, call, patch, mock_open
-
-import pytest
-import numpy as np
 import io
+from unittest.mock import MagicMock, call, mock_open, patch
+
+import numpy as np
+import pytest
 
 import NeuralTSNE.MnistPlotter as plotter
 

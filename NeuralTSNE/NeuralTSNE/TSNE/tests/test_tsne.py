@@ -1,19 +1,20 @@
-from unittest.mock import MagicMock, call, patch, mock_open
+import argparse
+import io
+import os
+import random
 import string
 import tempfile
-import io
-import random
 from collections import OrderedDict
-from typing import List, Tuple, Any
-import argparse
-import os
+from typing import Any, List, Tuple
+from unittest.mock import MagicMock, mock_open, patch
 
-import pytest
-import numpy as np
-import torch
-from torch.utils.data import Dataset, DataLoader, TensorDataset
-import NeuralTSNE.TSNE as tsne
 import lightning as L
+import numpy as np
+import pytest
+import torch
+from torch.utils.data import DataLoader, Dataset, TensorDataset
+
+import NeuralTSNE.TSNE as tsne
 
 
 class PersistentStringIO(io.StringIO):

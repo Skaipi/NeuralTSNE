@@ -1,10 +1,11 @@
-import torch
-from torch.utils.data import DataLoader, Dataset
-from torchvision import datasets
-from torchvision.transforms import ToTensor, Compose, Lambda, Normalize
-from torch import flatten
 import os
-from typing import Tuple, List
+from typing import List, Tuple
+
+import torch
+from torch import flatten
+from torch.utils.data import Dataset
+from torchvision import datasets
+from torchvision.transforms import Compose, Lambda, ToTensor
 
 
 def get_mnist() -> Tuple[Dataset, Dataset]:

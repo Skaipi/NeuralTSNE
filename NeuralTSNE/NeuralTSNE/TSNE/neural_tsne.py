@@ -1,22 +1,21 @@
 import argparse
-from collections import OrderedDict
 import io
+import sys
+from collections import OrderedDict
+from typing import Any, Callable, List, Tuple, Union
 
-import numpy as np
 import lightning as L
-from lightning.pytorch.tuner import Tuner
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-
-# from argparse_range import range_action
-from lightning.pytorch.callbacks import EarlyStopping
-from torch.utils.data import DataLoader, Dataset, TensorDataset, random_split, Subset
-from tqdm import tqdm
-import sys
-from NeuralTSNE.DatasetLoader import get_datasets
-from typing import Any, Callable, List, Tuple, Union
 import torchinfo
+from lightning.pytorch.callbacks import EarlyStopping
+from lightning.pytorch.tuner import Tuner
+from torch.utils.data import DataLoader, Dataset, Subset, TensorDataset, random_split
+from tqdm import tqdm
+
+from NeuralTSNE.DatasetLoader import get_datasets
 
 
 def does_sum_up_to(a: float, b: float, to: float, epsilon=1e-7) -> bool:

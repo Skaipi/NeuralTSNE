@@ -1,7 +1,5 @@
 import io
-import os
 import random
-import string
 from collections import OrderedDict
 from typing import Any, List, Tuple
 from unittest.mock import MagicMock, patch
@@ -13,6 +11,7 @@ import torch
 from torch.utils.data import DataLoader, Dataset, TensorDataset
 
 import NeuralTSNE.TSNE as tsne
+from NeuralTSNE.TSNE.cost_functions import CostFunctions
 
 
 class PersistentStringIO(io.StringIO):
@@ -160,7 +159,7 @@ def test_x2p_job(
         ],
     ],
 )
-@patch("NeuralTSNE.TSNE.neural_tsne.x2p_job")
+@patch("NeuralTSNE.TSNE.helpers.x2p_job")
 def test_x2p(
     mock_x2p_job: MagicMock,
     X: torch.Tensor,
@@ -312,9 +311,13 @@ def test_neural_network_gradients(neural_network_params, neural_network):
 def parametric_tsne_instance(request):
     params = request.param
     with (
-        patch("NeuralTSNE.TSNE.neural_tsne.ParametricTSNE.set_loss_fn") as mock_loss_fn,
+        patch(
+            "NeuralTSNE.TSNE.parametric_tsne.ParametricTSNE.set_loss_fn"
+        ) as mock_loss_fn,
         patch("torchinfo.summary") as mock_summary,
-        patch("NeuralTSNE.TSNE.neural_tsne.NeuralNetwork", autospec=True) as mock_nn,
+        patch(
+            "NeuralTSNE.TSNE.parametric_tsne.NeuralNetwork", autospec=True
+        ) as mock_nn,
     ):
         mock_loss_fn.return_value = params["loss_fn"]
         instance = tsne.ParametricTSNE(**params)
@@ -413,9 +416,8 @@ def test_set_loss_fn(default_parametric_tsne_instance, loss_fn: List[str]):
 def test_set_invalid_loss_fn(default_parametric_tsne_instance, loss_fn: List[str]):
     tsne_instance, params = default_parametric_tsne_instance
     tsne_instance.loss_fn = None
-    tsne_instance.set_loss_fn(loss_fn)
-
-    assert tsne_instance.loss_fn is None
+    with pytest.raises(AttributeError):
+        tsne_instance.set_loss_fn(loss_fn)
 
 
 @pytest.mark.parametrize("filename", ["test", "model"])
@@ -434,7 +436,7 @@ def test_save_model(
 
 @pytest.mark.parametrize("filename", ["test", "model"])
 @patch("NeuralTSNE.TSNE.neural_tsne.torch.load")
-@patch("NeuralTSNE.TSNE.neural_tsne.NeuralNetwork.load_state_dict")
+@patch("NeuralTSNE.TSNE.neural_network.NeuralNetwork.load_state_dict")
 def test_read_model(
     mock_load_dict: MagicMock,
     mock_load: MagicMock,
@@ -579,7 +581,7 @@ def test_calculate_P(default_parametric_tsne_instance):
 
 
 @pytest.mark.parametrize("fill_with", [0, "NaN"])
-@patch("NeuralTSNE.TSNE.neural_tsne.x2p")
+@patch("NeuralTSNE.TSNE.parametric_tsne.x2p")
 def test_calculate_P_mocked(
     mock_x2p: MagicMock, default_parametric_tsne_instance, fill_with: Any
 ):
@@ -616,7 +618,7 @@ def test_calculate_P_mocked(
 
 
 @pytest.mark.parametrize("fill_with", [0, "NaN"])
-@patch("NeuralTSNE.TSNE.neural_tsne.x2p")
+@patch("NeuralTSNE.TSNE.parametric_tsne.x2p")
 def test_calculate_P_mocked_nan(
     mock_x2p: MagicMock, default_parametric_tsne_instance, fill_with: Any
 ):
@@ -674,7 +676,7 @@ def test_calculate_P_mocked_nan(
             torch.tensor(0.0154),
         ),
     ],
-)
+)  # TODO: EXTRACT LOSS_FN TO A SEPARATE FILE
 def test_kl_divergence(
     default_parametric_tsne_instance,
     P: torch.tensor,
@@ -683,7 +685,7 @@ def test_kl_divergence(
 ):
     tsne_instance, _ = default_parametric_tsne_instance
     tsne_instance.batch_size = P.shape[0]
-    C = tsne_instance._kl_divergence(Q, P)
+    C = CostFunctions.kl_divergence(Q, P, {"device": "cpu", "batch_size": P.shape[0]})
 
     assert torch.allclose(C, expected, rtol=1e-3)
 

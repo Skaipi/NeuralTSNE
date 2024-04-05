@@ -1,16 +1,19 @@
 from .neural_tsne import (
-    does_sum_up_to,
     load_torch_dataset,
     load_labels,
     load_text_file,
     load_npy_file,
-    Hbeta,
-    x2p_job,
-    x2p,
-    NeuralNetwork,
     ParametricTSNE,
     Classifier,
     save_results,
     save_labels_data,
     run_tsne,
+)
+
+from .neural_network import NeuralNetwork
+
+from .helpers import (
+    Hbeta,
+    x2p_job,
+    x2p,
 )

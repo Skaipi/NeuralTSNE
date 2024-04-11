@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 import torch
 
-from NeuralTSNE.TSNE.tests.test_tsne import (
+from NeuralTSNE.TSNE.tests.common import (
     DataLoaderMock,
     MyDataset,
     PersistentStringIO,

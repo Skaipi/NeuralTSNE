@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, mock_open, patch
 import pytest
 import torch
 
-from NeuralTSNE.TSNE.tests.test_tsne import (
+from NeuralTSNE.TSNE.tests.common import (
     DataLoaderMock,
     MyDataset,
     PersistentStringIO,

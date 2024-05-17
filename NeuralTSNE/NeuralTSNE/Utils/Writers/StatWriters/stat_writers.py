@@ -11,13 +11,15 @@ def save_means_and_vars(data: torch.Tensor, filtered_data: torch.Tensor = None) 
 
     If `filtered_data` is provided, it calculates and saves means and variances for both original and filtered columns.
 
-    ---
-    ### Parameters:
-        - `data` (`torch.Tensor`): The input 2D tensor for which means and variances are calculated.
-        - `filtered_data` (`torch.Tensor`, optional): A filtered version of the input data. Defaults to `None`.
+    Parameters
+    ----------
+    `data` : `torch.Tensor`
+        The input 2D tensor for which means and variances are calculated.
+    `filtered_data` : `torch.Tensor`, optional
+        A filtered version of the input data. Defaults to `None`.
 
-    ---
-    ### Note:
+    Note
+    -----
     - The function calculates means and variances for each column in the input data.
     - If `filtered_data` is provided, it also calculates and saves means and variances for the corresponding filtered columns.
     """
@@ -42,12 +44,17 @@ def save_results(args: dict, test: DataLoader, Y: Union[List[Any], List[List[Any
     """
     Save results to a file.
 
-    ---
-    ### Parameters:
-        - `args` (`dict`): Dictionary containing arguments, including the output file path (`o`) and step size (`step`).
-        - `test` (`DataLoader`): DataLoader for the test dataset.
-        - `Y` (`Union[List[Any], List[List[Any]]]`): List of results to be saved.
+    Parameters
+    ----------
+    `args` : `dict`
+        Dictionary containing arguments, including the output file path (`o`) and step size (`step`).
+    `test` : `DataLoader`
+        DataLoader for the test dataset.
+    `Y` : `List[Any] | List[List[Any]]`
+        List of results to be saved.
 
+    Note
+    ----
     This function saves the results to a file specified by the output file path in the arguments.
     """
     if test is not None:

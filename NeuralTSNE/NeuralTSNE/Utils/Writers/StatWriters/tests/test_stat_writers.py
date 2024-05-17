@@ -13,7 +13,7 @@ from NeuralTSNE.TSNE.tests.common import (
     MyDataset,
     PersistentStringIO,
 )
-from NeuralTSNE.Utils.Writers.StatWriters.stat_writers import (
+from NeuralTSNE.Utils.Writers.StatWriters import (
     save_means_and_vars,
     save_results,
 )

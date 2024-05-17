@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from NeuralTSNE.Utils.Preprocessing.Normalizers.normalizers import normalize_columns
+from NeuralTSNE.Utils.Preprocessing.Normalizers import normalize_columns
 
 
 @pytest.mark.parametrize(

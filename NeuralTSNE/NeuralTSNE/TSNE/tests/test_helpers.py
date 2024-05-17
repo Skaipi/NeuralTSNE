@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import torch
 
-from NeuralTSNE.TSNE.helpers import Hbeta, x2p, x2p_job
+from NeuralTSNE.TSNE import Hbeta, x2p, x2p_job
 
 
 @pytest.mark.parametrize(
@@ -90,7 +90,7 @@ def test_x2p_job(
         ],
     ],
 )
-@patch("NeuralTSNE.TSNE.helpers.x2p_job")
+@patch("NeuralTSNE.TSNE.Helpers.helpers.x2p_job")
 def test_x2p(
     mock_x2p_job: MagicMock,
     X: torch.Tensor,

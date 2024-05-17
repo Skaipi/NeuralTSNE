@@ -12,18 +12,20 @@ def load_labels(labels: io.TextIOWrapper) -> Union[torch.Tensor, None]:
     The function reads labels from the provided text file and converts them into a `torch.Tensor` of type `float`.
     If the `labels` parameter is not provided or the file is empty, the function returns `None`.
 
-    ---
-    ### Parameters:
-        - `labels` (`io.TextIOWrapper`): The `file` object containing labels to be loaded.
+    Parameters
+    ----------
+    `labels` : `io.TextIOWrapper`
+        The `file` object containing labels to be loaded.
 
-    ---
-    ### Returns:
-        - `Union[torch.Tensor, None]`: A `torch.Tensor` containing loaded labels or `None` if no labels are available.
+    Returns
+    -------
+    `torch.Tensor` | `None`
+        A `torch.Tensor` containing loaded labels or `None` if no labels are available.
 
-    ---
-    ### Note:
+    Note
+    ----
     - The function expects the `labels` parameter to be a file object (`io.TextIOWrapper`) with labels in text format.
-        - If the file is not provided or is empty, the function returns `None`.
+    - If the file is not provided or is empty, the function returns `None`.
     - The labels are read from the file using `numpy` and then converted to a `torch.Tensor` of type `float`.
     """
     read_labels = None

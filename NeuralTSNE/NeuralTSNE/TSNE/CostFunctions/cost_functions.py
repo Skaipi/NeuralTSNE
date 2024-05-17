@@ -3,19 +3,34 @@ import torch
 
 
 class CostFunctions:
+    """
+    Class containing cost functions for t-SNE.
+
+    Parameters
+    ----------
+    `name` : `str`
+        The name of the cost function to retrieve.
+
+    Returns
+    -------
+    `callable`
+        The specified cost function.
+    """
+
     @staticmethod
     def __call__(name):
         """
         Returns the specified cost function by name.
 
-        ---
-        ### Parameters:
-            - `name` (`str`): The name of the cost function to retrieve.
+        Parameters
+        ----------
+        `name` : `str`
+            The name of the cost function to retrieve.
 
-        ---
-        ### Returns:
-            - `callable`: The specified cost function.
-
+        Returns
+        -------
+        `callable`
+            The specified cost function.
         """
         return getattr(CostFunctions, name)
 
@@ -24,17 +39,22 @@ class CostFunctions:
         Y: torch.Tensor, P: torch.Tensor, params: dict[str, Any]
     ) -> torch.Tensor:
         """
-        Calculate the Kullback-Leibler divergence.
+        Calculates the Kullback-Leibler divergence.
 
-        ---
-        ### Parameters:
-            - `Y` (`torch.Tensor`): Embedding tensor.
-            - `P` (`torch.Tensor`): Conditional probability matrix.
+        Parameters
+        ----------
+        `Y` : `torch.Tensor`
+            Embedding tensor.
+        `P` : `torch.Tensor`
+            Conditional probability matrix.
 
-        ---
-        ### Returns:
-            - `torch.Tensor`: Kullback-Leibler divergence.
+        Returns
+        -------
+        `torch.Tensor`
+            Kullback-Leibler divergence.
 
+        Note
+        ----
         Calculates the Kullback-Leibler divergence between the true conditional probability matrix P
         and the conditional probability matrix Q based on the current embedding Y.
         """

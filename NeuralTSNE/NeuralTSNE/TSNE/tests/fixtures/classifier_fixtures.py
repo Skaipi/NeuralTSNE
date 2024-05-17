@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from NeuralTSNE.TSNE.classifiers import Classifier
+from NeuralTSNE.TSNE import Classifier
 
 
 @pytest.fixture
@@ -10,7 +10,7 @@ def classifier_instance(request, default_parametric_tsne_instance):
     params = request.param
 
     with patch(
-        "NeuralTSNE.TSNE.classifiers.Classifier.reset_exaggeration_status"
+        "NeuralTSNE.TSNE.Classifier.reset_exaggeration_status"
     ) as mock_exaggeration_status:
         yield Classifier(tsne=default_parametric_tsne_instance[0], **params), params | {
             "tsne": default_parametric_tsne_instance[0]

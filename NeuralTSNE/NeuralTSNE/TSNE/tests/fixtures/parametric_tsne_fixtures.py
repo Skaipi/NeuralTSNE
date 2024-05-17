@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from NeuralTSNE.TSNE.parametric_tsne import ParametricTSNE
+from NeuralTSNE.TSNE import ParametricTSNE
 
 
 @pytest.fixture
@@ -10,11 +10,12 @@ def parametric_tsne_instance(request):
     params = request.param
     with (
         patch(
-            "NeuralTSNE.TSNE.parametric_tsne.ParametricTSNE.set_loss_fn"
+            "NeuralTSNE.TSNE.ParametricTSNE.parametric_tsne.ParametricTSNE.set_loss_fn"
         ) as mock_loss_fn,
         patch("torchinfo.summary") as mock_summary,
         patch(
-            "NeuralTSNE.TSNE.parametric_tsne.NeuralNetwork", autospec=True
+            "NeuralTSNE.TSNE.ParametricTSNE.parametric_tsne.NeuralNetwork",
+            autospec=True,
         ) as mock_nn,
     ):
         mock_loss_fn.return_value = params["loss_fn"]

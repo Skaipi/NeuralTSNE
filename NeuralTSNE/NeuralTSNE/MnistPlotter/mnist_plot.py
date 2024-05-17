@@ -3,17 +3,25 @@ import numpy as np
 import seaborn as sns
 
 
-def plot(data, labels, is_fashion=False, img_file=None):
+def plot(
+    data: np.ndarray, labels: np.ndarray, is_fashion: bool = False, img_file: str = None
+) -> None:
     """
     Plot t-SNE results of mnist dataset.
 
-    ---
-    ### Parameters:
-        - `data`: t-SNE data to be plotted.
-        - `labels`: Labels corresponding to the data points.
-        - `is_fashion` (`bool`, optional): Flag indicating whether the dataset is a fashion dataset.
-        - `img_file` (`str`, optional): File path to save the plot as an image.
+    Parameters
+    ----------
+    `data` : `np.ndarray`
+        t-SNE data to be plotted.
+    `labels` : `np.ndarray`
+        Labels corresponding to the data points.
+    `is_fashion` : `bool`, optional
+        Flag indicating whether the dataset is a fashion dataset.
+    `img_file` : `str`, optional
+        File path to save the plot as an image.
 
+    Note
+    ----
     This function plots the t-SNE results with colored points based on the provided labels.
     """
     if is_fashion:
@@ -50,16 +58,21 @@ def plot(data, labels, is_fashion=False, img_file=None):
     plt.show()
 
 
-def plot_from_file(file, labels_file, is_fashion=False):
+def plot_from_file(file: str, labels_file: str, is_fashion: bool = False) -> None:
     """
     Plot t-SNE results of mnist dataset from file.
 
-    ---
-    ### Parameters:
-        - `file` (`str`): File path containing t-SNE data.
-        - `labels_file` (`str`): File path containing labels data.
-        - `is_fashion` (`bool`, optional): Flag indicating whether the dataset is a fashion dataset.
+    Parameters
+    ----------
+    `file` : `str`
+        File path containing t-SNE data.
+    `labels_file` : `str`
+        File path containing labels data.
+    `is_fashion` : `bool`, optional
+        Flag indicating whether the dataset is a fashion dataset.
 
+    Note
+    ----
     This function reads t-SNE data and labels from files and plots the results using the `plot` function.
     """
     data = None

@@ -4,13 +4,13 @@ import torch
 from torch.utils.data import Dataset, Subset
 
 from NeuralTSNE.DatasetLoader import get_datasets
-from NeuralTSNE.Utils.Writers.StatWriters.stat_writers import (
+from NeuralTSNE.Utils.Writers.StatWriters import (
     save_means_and_vars,
 )
-from NeuralTSNE.Utils.Writers.LabelWriters.label_writers import (
+from NeuralTSNE.Utils.Writers.LabelWriters import (
     save_torch_labels,
 )
-from NeuralTSNE.Utils.Preprocessing.preprocessing import prepare_data
+from NeuralTSNE.Utils.Preprocessing import prepare_data
 
 
 def load_text_file(
@@ -28,17 +28,23 @@ def load_text_file(
     the data based on the given `step` size. Finally, it preprocesses the data by applying
     a `variance threshold` to perform feature selection and returns the resulting `torch.Tensor`.
 
-    ---
-    ### Parameters:
-        - `input_file` (`str`): The path to the input text file.
-        - `step` (`int`): Step size for subsampling the data.
-        - `header` (`bool`): A boolean indicating whether the file has a header.
-        - `exclude_cols` (`List[int]`): A list of column indices to exclude from the data.
-        - `variance_threshold` (`float`): Threshold for variance-based feature selection.
+    Parameters
+    ----------
+    `input_file` : `str`
+        The path to the input text file.
+    `step` : `int`
+        Step size for subsampling the data.
+    `header` : `bool`
+        A boolean indicating whether the file has a header.
+    `exclude_cols` : `List[int]`
+        A list of column indices to exclude from the data.
+    `variance_threshold` : `float`
+        Threshold for variance-based feature selection.
 
-    ---
-    ### Returns:
-        - `torch.Tensor`: Processed data tensor.
+    Returns
+    -------
+    `torch.Tensor`
+        Processed data tensor.
     """
     input_file = open(input_file, "r")
     cols = None
@@ -74,16 +80,21 @@ def load_npy_file(
     and excludes specified columns if the `exclude_cols` list is provided. It then preprocesses the data
     by applying a `variance threshold` to perform feature selection and returns the resulting `torch.Tensor`.
 
-    ---
-    ### Parameters:
-        - `input_file` (`str`): The path to the input `NumPy` file (`.npy`).
-        - `step` (`int`): Step size for subsampling the data.
-        - `exclude_cols` (`List[int]`): A list of column indices to exclude from the data.
-        - `variance_threshold` (`float`): Threshold for variance-based feature selection.
+    Parameters
+    ----------
+    `input_file` : `str`
+        The path to the input `NumPy` file (`.npy`).
+    `step` : `int`
+        Step size for subsampling the data.
+    `exclude_cols` : `List[int]`
+        A list of column indices to exclude from the data.
+    `variance_threshold` : `float`
+        Threshold for variance-based feature selection.
 
-    ---
-    ### Returns:
-        - `torch.Tensor`: Processed data tensor.
+    Returns
+    -------
+    `torch.Tensor`
+        Processed data tensor.
     """
     data = np.load(input_file)
     data = data[::step, :]
@@ -102,18 +113,22 @@ def load_torch_dataset(name: str, step: int, output: str) -> Tuple[Dataset, Data
     The function loads a `torch.Dataset` specified by the `name` parameter, extracts `training` and `testing` subsets,
     and preprocesses the `training` subset by saving labels and calculating means and variances.
 
-    ---
-    ### Parameters:
-        - `name` (`str`): The name of the torch dataset to be loaded.
-        - `step` (`int`): The step size for subsampling the training dataset.
-        - `output` (`str`): The output file path for saving labels.
+    Parameters
+    ----------
+    `name` : `str`
+        The name of the torch dataset to be loaded.
+    `step` : `int`
+        The step size for subsampling the training dataset.
+    `output` : `str`
+        The output file path for saving labels.
 
-    ---
-    ### Returns:
-        - `Tuple[Dataset, Dataset]`: A tuple containing the training and testing subsets.
+    Returns
+    -------
+    `Tuple[Dataset, Dataset]`
+        A tuple containing the training and testing subsets.
 
-    ---
-    ### Note:
+    Note
+    ----
     - The function uses the `name` parameter to load a torch dataset and extract training and testing subsets.
     - The training subset is subsampled using the `step` parameter.
     - Labels for the testing subset are saved to a file specified by the `output` parameter.

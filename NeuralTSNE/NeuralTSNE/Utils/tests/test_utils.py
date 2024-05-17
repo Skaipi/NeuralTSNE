@@ -1,6 +1,6 @@
 import pytest
 
-from NeuralTSNE.Utils.utils import does_sum_up_to
+from NeuralTSNE.Utils import does_sum_up_to
 
 
 @pytest.mark.parametrize(

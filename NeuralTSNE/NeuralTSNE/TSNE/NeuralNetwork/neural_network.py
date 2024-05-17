@@ -8,13 +8,19 @@ class NeuralNetwork(nn.Module):
     """
     Neural network model for dimensionality reduction.
 
-    ---
-    ### Parameters:
-        - `initial_features` (`int`): Number of input features.
-        - `n_components` (`int`): Number of components in the output.
-        - `multipliers` (`List[float]`): List of multipliers for hidden layers.
-        - `pre_filled_layers` (`Optional[OrderedDict]`): Pre-filled OrderedDict for layers (default: None).
+    Parameters
+    ----------
+    `initial_features` : `int`
+        Number of input features.
+    `n_components` : `int`
+        Number of components in the output.
+    `multipliers` : `List[float]`
+        List of multipliers for hidden layers.
+    `pre_filled_layers` : `OderedDict`, optional
+        Pre-filled OrderedDict for layers. Defaults to `None`.
 
+    Note
+    ----
     The neural network is designed for dimensionality reduction with
     hidden layers defined by the list of multipliers. ReLU activation
     functions are applied between layers.
@@ -55,13 +61,15 @@ class NeuralNetwork(nn.Module):
         """
         Forward pass through the neural network.
 
-        ---
-        ### Parameters:
-            - `x` (`torch.Tensor`): Input tensor.
+        Parameters
+        ----------
+        `x` : `torch.Tensor`
+            Input tensor.
 
-        ---
-        ### Returns:
-            - `torch.Tensor`: Output tensor.
+        Returns
+        -------
+        `torch.Tensor`
+            Output tensor.
         """
         logits = self.linear_relu_stack(x)
         return logits

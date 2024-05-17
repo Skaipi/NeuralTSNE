@@ -5,7 +5,7 @@ from typing import List
 
 import pytest
 
-from NeuralTSNE.Utils.Validators.FileTypeValidators.filetype_validators import (
+from NeuralTSNE.Utils.Validators.FileTypeValidators import (
     FileTypeWithExtensionCheck,
     FileTypeWithExtensionCheckWithPredefinedDatasets,
 )

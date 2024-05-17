@@ -4,7 +4,7 @@ import pytest
 import lightning as L
 import torch
 
-from NeuralTSNE.TSNE.classifiers import Classifier
+from NeuralTSNE.TSNE import Classifier
 from NeuralTSNE.TSNE.tests.common import (
     MyDataset,
     DataLoaderMock,
@@ -14,7 +14,7 @@ from NeuralTSNE.TSNE.tests.fixtures.parametric_tsne_fixtures import (
     default_parametric_tsne_instance,
 )
 
-from NeuralTSNE.TSNE.parametric_tsne import ParametricTSNE
+from NeuralTSNE.TSNE import ParametricTSNE
 from NeuralTSNE.TSNE.tests.fixtures.classifier_fixtures import (
     default_classifier_instance,
     classifier_instance,

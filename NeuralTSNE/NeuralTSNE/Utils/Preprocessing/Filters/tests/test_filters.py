@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import torch
 
-from NeuralTSNE.Utils.Preprocessing.Filters.filters import filter_data_by_variance
+from NeuralTSNE.Utils.Preprocessing.Filters import filter_data_by_variance
 
 
 @pytest.mark.parametrize(

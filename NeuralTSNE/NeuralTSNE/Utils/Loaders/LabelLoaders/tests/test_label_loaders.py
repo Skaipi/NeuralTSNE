@@ -3,7 +3,7 @@ import io
 import pytest
 import torch
 
-from NeuralTSNE.Utils.Loaders.LabelLoaders.label_loaders import load_labels
+from NeuralTSNE.Utils.Loaders.LabelLoaders import load_labels
 
 
 @pytest.mark.parametrize(

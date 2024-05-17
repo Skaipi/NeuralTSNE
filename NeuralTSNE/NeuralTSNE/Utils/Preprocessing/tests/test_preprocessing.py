@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 import torch
 
-from NeuralTSNE.Utils.Preprocessing.preprocessing import prepare_data
+from NeuralTSNE.Utils.Preprocessing import prepare_data
 
 
 @pytest.mark.parametrize("variance_threshold", [0.1, 0.5, None])

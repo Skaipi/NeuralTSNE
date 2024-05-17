@@ -4,17 +4,22 @@ import torch
 
 def Hbeta(D: torch.Tensor, beta: float) -> Tuple[torch.Tensor, torch.Tensor]:
     """
-    Calculate entropy and probability distribution based on a distance matrix.
+    Calculates entropy and probability distribution based on a distance matrix.
 
-    ---
-    ### Parameters:
-        - `D` (`torch.Tensor`): Distance matrix.
-        - `beta` (`float`): Parameter for the computation.
+    Parameters
+    ----------
+    `D` : `torch.Tensor`
+        Distance matrix.
+    `beta` : `float`
+        Parameter for the computation.
 
-    ---
-    ### Returns:
-        - `Tuple[torch.Tensor, torch.Tensor]`: Entropy and probability distribution.
+    Returns
+    -------
+    `Tuple[torch.Tensor, torch.Tensor]`
+        Entropy and probability distribution.
 
+    Note
+    ----
     The function calculates the entropy and probability distribution based on
     the provided distance matrix (`D`) and the specified parameter (`beta`).
     """
@@ -31,20 +36,26 @@ def x2p_job(
     max_iterations: int = 50,
 ) -> Tuple[int, torch.Tensor, torch.Tensor, int]:
     """
-    Perform a binary search to find an appropriate value of `beta` for a given point.
+    Performs a binary search to find an appropriate value of `beta` for a given point.
 
-    ---
-    ### Parameters:
-        - `data` (`Tuple[int, torch.Tensor, torch.Tensor]`): Tuple containing index, distance matrix, and target entropy.
-        - `tolerance` (`float`): Tolerance level for convergence.
-        - `max_iterations` (`int`, optional): Maximum number of iterations for the binary search. Default is 50.
+    Parameters
+    ----------
+    `data` : `Tuple[int, torch.Tensor, torch.Tensor]`
+        Tuple containing index, distance matrix, and target entropy.
+    `tolerance` : `float`
+        Tolerance level for convergence.
+    `max_iterations` : `int`, optional
+        Maximum number of iterations for the binary search. Defaults to `50`.
 
-    ---
-    ### Returns:
-        - `Tuple[int, torch.Tensor]`: Index, probability distribution, entropy difference, and number of iterations.
+    Returns
+    -------
+    `Tuple[int, torch.Tensor, torch.Tensor, int]`
+        Index, probability distribution, entropy difference, and number of iterations.
 
+    Note
+    ----
     The function performs a binary search to find an appropriate value of `beta` for a given point,
-    aiming to match the target entropy. It returns the index, probability distribution, entropy difference, and number of iterations.
+    aiming to match the target entropy.
     """
     i, Di, logU = data
     beta = 1.0
@@ -83,15 +94,19 @@ def x2p(
     """
     Compute conditional probabilities using the t-SNE algorithm.
 
-    ---
-    ### Parameters:
-        - `X` (`torch.Tensor`): Input data tensor.
-        - `perplexity` (`int`): Perplexity parameter for t-SNE.
-        - `tolerance` (`float`): Tolerance level for convergence.
+    Parameters
+    ----------
+    `X` : `torch.Tensor`
+        Input data tensor.
+    `perplexity` : `int`
+        Perplexity parameter for t-SNE.
+    `tolerance` : `float`
+        Tolerance level for convergence.
 
-    ---
-    ### Returns:
-        - `torch.Tensor`: Conditional probability matrix.
+    Returns
+    -------
+    `torch.Tensor`
+        Conditional probability matrix.
     """
     n = X.shape[0]
     logU = torch.log(torch.tensor([perplexity], device=X.device))

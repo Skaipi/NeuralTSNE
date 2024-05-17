@@ -5,20 +5,26 @@ import torch.optim as optim
 
 import lightning as L
 
-from NeuralTSNE.TSNE.parametric_tsne import ParametricTSNE
+from NeuralTSNE.TSNE import ParametricTSNE
 
 
 class Classifier(L.LightningModule):
     """
     Lightning Module for training a classifier using a Parametric t-SNE model.
 
-    ---
-    ### Parameters:
-        - `tsne` (`ParametricTSNE`): Parametric t-SNE model for feature extraction.
-        - `shuffle` (`bool`): Flag indicating whether to shuffle data during training.
-        - `optimizer` (`str`, optional): Optimizer for training. Default is `adam`.
-        - `lr` (`float`, optional): Learning rate for the optimizer. Default is `1e-3`.
+    Parameters
+    ----------
+    `tsne` : `ParametricTSNE`
+        Parametric t-SNE model for feature extraction.
+    `shuffle` : `bool`
+        Flag indicating whether to shuffle data during training.
+    `optimizer` : `str`, optional
+        Optimizer for training. Defaults to `adam`.
+    `lr` : `float`, optional
+        Learning rate for the optimizer. Defaults to `1e-3`.
 
+    Note
+    ----
     This class defines a Lightning Module for training a classifier using a Parametric t-SNE model
     for feature extraction. It includes methods for the training step, configuring optimizers, and
     handling the training process.
@@ -59,17 +65,22 @@ class Classifier(L.LightningModule):
         """
         Perform a single training step.
 
-        ---
-        ### Parameters:
-            - `batch` (`Union[torch.Tensor, Tuple[torch.Tensor, ...], List[Union[torch.Tensor, Any]]]`): Input batch.
-            - `batch_idx` (`int`): Index of the current batch.
+        Parameters
+        ----------
+        `batch` : `Union[torch.Tensor, Tuple[torch.Tensor, ...], List[Union[torch.Tensor, Any]]]`
+            Input batch.
+        `batch_idx` : `int`
+            Index of the current batch.
 
-        ---
-        ### Returns:
-            - `Dict[str, torch.Tensor]`: Dictionary containing the `loss` value.
+        Returns
+        -------
+        `Dict[str, torch.Tensor]`
+            Dictionary containing the `loss` value.
 
+        Note
+        ----
         This method defines a single training step for the classifier. It computes the loss using
-        the model's logits and the conditional probability matrix _P_batch.
+        the model's `logits` and the conditional probability matrix `_P_batch`.
         """
         x = batch[0]
         _P_batch = self.P_current[
@@ -99,15 +110,20 @@ class Classifier(L.LightningModule):
         """
         Set the optimizer based on the provided string.
 
-        ---
-        ### Parameters:
-            - `optimizer` (`str`): String indicating the desired optimizer.
-            - `optimizer_params` (`dict`): Dictionary containing optimizer parameters.
+        Parameters
+        ----------
+        `optimizer` : `str`
+            String indicating the desired optimizer.
+        `optimizer_params` : `dict`
+            Dictionary containing optimizer parameters.
 
-        ---
-        ### Returns:
-            - `torch.optim.Optimizer`: Initialized optimizer.
+        Returns
+        -------
+        `torch.optim.Optimizer`
+            Initialized optimizer.
 
+        Note
+        ----
         This method initializes and returns the desired optimizer based on the provided string.
         """
         if optimizer == "adam":
@@ -123,10 +139,13 @@ class Classifier(L.LightningModule):
         """
         Configure the optimizer for training.
 
-        ---
-        ### Returns:
-            - `torch.optim.Optimizer`: Configured optimizer.
+        Returns
+        -------
+        `torch.optim.Optimizer`
+            Configured optimizer.
 
+        Note
+        ----
         This method configures and returns the optimizer for training based on the specified parameters.
         """
         return self._set_optimizer(self.optimizer, {"lr": self.lr})
@@ -135,6 +154,8 @@ class Classifier(L.LightningModule):
         """
         Perform actions at the beginning of the training process.
 
+        Note
+        ----
         This method is called at the start of the training process and calculates the conditional
         probability matrix P based on the training dataloader.
         """
@@ -145,6 +166,8 @@ class Classifier(L.LightningModule):
         """
         Perform actions at the start of each training epoch.
 
+        Note
+        ----
         This method is called at the start of each training epoch. If exaggeration is enabled and has
         not ended, it modifies the conditional probability matrix for the current epoch.
         """
@@ -166,6 +189,8 @@ class Classifier(L.LightningModule):
         """
         Perform actions at the end of each training epoch.
 
+        Note
+        ----
         This method is called at the end of each training epoch. If exaggeration has ended and
         P_multiplied exists, it is deleted to free up memory.
         """
@@ -176,16 +201,22 @@ class Classifier(L.LightningModule):
         """
         Perform a single step during the prediction process.
 
-        ---
-        ### Parameters:
-            - `batch`: Input batch.
-            - `batch_idx`: Index of the current batch.
-            - `dataloader_idx`: Index of the dataloader (optional).
+        Parameters
+        ----------
+        `batch`
+            Input batch.
+        `batch_idx`
+            Index of the current batch.
+        `dataloader_idx` : optional
+            Index of the dataloader
 
-        ---
-        ### Returns:
-            - `torch.Tensor`: Model predictions.
+        Returns
+        -------
+        `torch.Tensor`
+            Model predictions.
 
+        Note
+        ----
         This method is called during the prediction process and returns the model's predictions for the input batch.
         """
         return self.model(batch[0])

@@ -10,17 +10,17 @@ from lightning.pytorch.callbacks import EarlyStopping
 from lightning.pytorch.tuner import Tuner
 
 from NeuralTSNE.DatasetLoader import get_datasets
-from NeuralTSNE.Utils.Writers.StatWriters.stat_writers import save_results
-from NeuralTSNE.Utils.Writers.LabelWriters.label_writers import save_labels_data
-from NeuralTSNE.Utils.Loaders.LabelLoaders.label_loaders import load_labels
-from NeuralTSNE.Utils.Loaders.FileLoaders.file_loaders import (
+from NeuralTSNE.Utils.Writers.StatWriters import save_results
+from NeuralTSNE.Utils.Writers.LabelWriters import save_labels_data
+from NeuralTSNE.Utils.Loaders.LabelLoaders import load_labels
+from NeuralTSNE.Utils.Loaders.FileLoaders import (
     load_npy_file,
     load_text_file,
     load_torch_dataset,
 )
 
-from NeuralTSNE.TSNE.parametric_tsne import ParametricTSNE
-from NeuralTSNE.TSNE.classifiers import Classifier
+from NeuralTSNE.TSNE import ParametricTSNE
+from NeuralTSNE.TSNE import Classifier
 
 
 def run_tsne(

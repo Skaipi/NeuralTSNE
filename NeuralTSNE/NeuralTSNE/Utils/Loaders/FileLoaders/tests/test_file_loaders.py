@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 import torch
 
-from NeuralTSNE.Utils.Loaders.FileLoaders.file_loaders import (
+from NeuralTSNE.Utils.Loaders.FileLoaders import (
     load_npy_file,
     load_text_file,
     load_torch_dataset,

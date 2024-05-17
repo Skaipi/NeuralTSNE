@@ -12,7 +12,7 @@ from NeuralTSNE.TSNE.tests.common import (
     MyDataset,
     PersistentStringIO,
 )
-from NeuralTSNE.Utils.Writers.LabelWriters.label_writers import (
+from NeuralTSNE.Utils.Writers.LabelWriters import (
     save_labels_data,
     save_torch_labels,
 )

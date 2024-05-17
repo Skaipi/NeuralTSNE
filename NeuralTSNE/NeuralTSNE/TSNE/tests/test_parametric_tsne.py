@@ -7,7 +7,7 @@ import pytest
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
-from NeuralTSNE.TSNE.parametric_tsne import ParametricTSNE
+from NeuralTSNE.TSNE import ParametricTSNE
 
 from NeuralTSNE.TSNE.tests.fixtures.dataloader_fixtures import mock_dataloaders
 from NeuralTSNE.TSNE.tests.fixtures.parametric_tsne_fixtures import (
@@ -103,8 +103,8 @@ def test_save_model(
 
 
 @pytest.mark.parametrize("filename", ["test", "model"])
-@patch("NeuralTSNE.TSNE.neural_tsne.torch.load")
-@patch("NeuralTSNE.TSNE.neural_network.NeuralNetwork.load_state_dict")
+@patch("NeuralTSNE.TSNE.ParametricTSNE.parametric_tsne.torch.load")
+@patch("NeuralTSNE.TSNE.NeuralNetwork.neural_network.NeuralNetwork.load_state_dict")
 def test_read_model(
     mock_load_dict: MagicMock,
     mock_load: MagicMock,
@@ -238,7 +238,7 @@ def test_calculate_P(default_parametric_tsne_instance):
 
 
 @pytest.mark.parametrize("fill_with", [0, "NaN"])
-@patch("NeuralTSNE.TSNE.parametric_tsne.x2p")
+@patch("NeuralTSNE.TSNE.ParametricTSNE.parametric_tsne.x2p")
 def test_calculate_P_mocked(
     mock_x2p: MagicMock, default_parametric_tsne_instance, fill_with: Any
 ):
@@ -275,7 +275,7 @@ def test_calculate_P_mocked(
 
 
 @pytest.mark.parametrize("fill_with", [0, "NaN"])
-@patch("NeuralTSNE.TSNE.parametric_tsne.x2p")
+@patch("NeuralTSNE.TSNE.ParametricTSNE.parametric_tsne.x2p")
 def test_calculate_P_mocked_nan(
     mock_x2p: MagicMock, default_parametric_tsne_instance, fill_with: Any
 ):

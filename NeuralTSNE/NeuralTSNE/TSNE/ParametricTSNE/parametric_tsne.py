@@ -8,31 +8,43 @@ from torch.utils.data import DataLoader, Dataset, TensorDataset, random_split
 
 from tqdm import tqdm
 
-from NeuralTSNE.TSNE.helpers import x2p
-from NeuralTSNE.TSNE.cost_functions import CostFunctions
-from NeuralTSNE.TSNE.neural_network import NeuralNetwork
+from NeuralTSNE.TSNE import x2p
+from NeuralTSNE.TSNE import CostFunctions
+from NeuralTSNE.TSNE import NeuralNetwork
 
-from NeuralTSNE.Utils.utils import does_sum_up_to
+from NeuralTSNE.Utils import does_sum_up_to
 
 
 class ParametricTSNE:
     """
     Parametric t-SNE implementation using a neural network model.
 
-    ---
-    ### Parameters:
-        - `loss_fn` (`str`): Loss function for t-SNE. Currently supports `kl_divergence`.
-        - `n_components` (`int`): Number of components in the output.
-        - `perplexity` (`int`): Perplexity parameter for t-SNE.
-        - `batch_size` (`int`): Batch size for training.
-        - `early_exaggeration_epochs` (`int`): Number of epochs for early exaggeration.
-        - `early_exaggeration_value` (`float`): Early exaggeration factor.
-        - `max_iterations` (`int`): Maximum number of iterations for optimization.
-        - `features` (`int`): Number of input features.
-        - `multipliers` (`List[float]`): List of multipliers for hidden layers in the neural network.
-        - `n_jobs` (`int`, optional): Number of workers for data loading. Default is `0`.
-        - `tolerance` (`float`, optional): Tolerance level for convergence. Default is `1e-5`.
-        - `force_cpu` (`bool`, optional): Force using CPU even if GPU is available. Default is `False`.
+    Parameters
+    ----------
+    `loss_fn` : `str`
+        Loss function for t-SNE. Currently supports `kl_divergence`.
+    `n_components` : `int`
+        Number of components in the output.
+    `perplexity` : `int`
+        Perplexity parameter for t-SNE.
+    `batch_size` : `int`
+        Batch size for training.
+    `early_exaggeration_epochs` : `int`
+        Number of epochs for early exaggeration.
+    `early_exaggeration_value` : `float`
+        Early exaggeration factor.
+    `max_iterations` : `int`
+        Maximum number of iterations for optimization.
+    `features` : `int`
+        Number of input features.
+    `multipliers` : `List[float]`
+        List of multipliers for hidden layers in the neural network.
+    `n_jobs` : `int`, optional
+        Number of workers for data loading. Defaults to `0`.
+    `tolerance` : `float`, optional
+        Tolerance level for convergence. Defaults to `1e-5`.
+    `force_cpu` : `bool`, optional
+        Force using CPU even if GPU is available. Defaults to `False`.
     """
 
     def __init__(
@@ -93,14 +105,18 @@ class ParametricTSNE:
         """
         Set the loss function based on the provided string.
 
-        ---
-        ### Parameters:
-            - `loss_fn` (`str`): String indicating the desired loss function.
+        Parameters
+        ----------
+        `loss_fn` : `str`
+            String indicating the desired loss function.
 
-        ---
-        ### Returns:
-            - `Callable`: Corresponding loss function.
+        Returns
+        -------
+        `Callable`
+            Corresponding loss function.
 
+        Note
+        ----
         Currently supports `kl_divergence` as the loss function.
         """
         fn = CostFunctions.__call__(loss_fn)
@@ -111,9 +127,10 @@ class ParametricTSNE:
         """
         Save the model's state dictionary to a file.
 
-        ---
-        ### Parameters:
-            - `filename` (`str`): Name of the file to save the model.
+        Parameters
+        ----------
+        `filename` : `str`
+            Name of the file to save the model.
         """
         torch.save(self.model.state_dict(), filename)
 
@@ -121,9 +138,10 @@ class ParametricTSNE:
         """
         Load the model's state dictionary from a file.
 
-        ---
-        ### Parameters:
-            - `filename` (`str`): Name of the file to load the model.
+        Parameters
+        ----------
+        `filename` : `str`
+            Name of the file to load the model.
         """
         self.model.load_state_dict(torch.load(filename))
 
@@ -135,19 +153,26 @@ class ParametricTSNE:
         test_size: float = None,
     ) -> Tuple[Union[DataLoader, None], Union[DataLoader, None]]:
         """
-        Split the dataset into training and testing sets.
+        Split the dataset into training and testing set
 
-        ---
-        ### Parameters:
-            - `X` (`torch.Tensor`): Input data tensor.
-            - `y` (`torch.Tensor`, optional): Target tensor. Default is `None`.
-            - `train_size` (`float`, optional): Proportion of the dataset to include in the training set.
-            - `test_size` (`float`, optional): Proportion of the dataset to include in the testing set.
+        Parameters
+        ----------
+        `X` : `torch.Tensor`
+            Input data tensor.
+        `y` : `torch.Tensor`, optional
+            Target tensor. Default is `None`.
+        `train_size` : `float`, optional
+            Proportion of the dataset to include in the training set.
+        `test_size` : `float`, optional
+            Proportion of the dataset to include in the testing set.
 
-        ---
-        ### Returns:
-            - `Tuple[Union[DataLoader, None], Union[DataLoader, None]]`: Tuple containing training and testing dataloaders.
+        Returns
+        -------
+        `Tuple[DataLoader | None, DataLoader | None]`
+            Tuple containing training and testing dataloaders.
 
+        Note
+        ----
         Splits the input data into training and testing sets, and returns corresponding dataloaders.
         """
         train_size, test_size = self._determine_train_test_split(train_size, test_size)
@@ -171,14 +196,17 @@ class ParametricTSNE:
         """
         Determine the proportions of training and testing sets.
 
-        ---
-        ### Parameters:
-            - `train_size` (`float`): Proportion of the dataset to include in the training set.
-            - `test_size` (`float`): Proportion of the dataset to include in the testing set.
+        Parameters
+        ----------
+        `train_size` : `float`
+            Proportion of the dataset to include in the training set.
+        `test_size` : `float`
+            Proportion of the dataset to include in the testing set.
 
-        ---
-        ### Returns:
-            - `Tuple[float, float]`: Tuple containing the determined proportions.
+        Returns
+        -------
+        `Tuple[float, float]`
+            Tuple containing the determined proportions.
         """
         if train_size is None and test_size is None:
             train_size = 0.8
@@ -197,14 +225,17 @@ class ParametricTSNE:
         """
         Create dataloaders for training and testing sets.
 
-        ---
-        ### Parameters:
-            - `train` (`Dataset`): Training dataset.
-            - `test` (`Dataset`): Testing dataset.
+        Parameters
+        ----------
+        `train` : `Dataset`
+            Training dataset.
+        `test` : `Dataset`
+            Testing dataset.
 
-        ---
-        ### Returns:
-            - `Tuple[Union[DataLoader, None], Union[DataLoader, None]]`: Tuple containing training and testing dataloaders.
+        Returns
+        -------
+        `Tuple[DataLoader | None, DataLoader | None]`
+            Tuple containing training and testing dataloaders.
         """
         train_loader = (
             DataLoader(
@@ -234,13 +265,15 @@ class ParametricTSNE:
         """
         Calculate joint probability matrix P.
 
-        ---
-        ### Parameters:
-            - `dataloader` (`DataLoader`): Dataloader for the dataset.
+        Parameters
+        ----------
+        `dataloader` : `DataLoader`
+            Dataloader for the dataset.
 
-        ---
-        ### Returns:
-            - `torch.Tensor`: Conditional probability matrix P.
+        Returns
+        -------
+        `torch.Tensor`
+            Conditional probability matrix P.
         """
         n = len(dataloader.dataset)
         P = torch.zeros((n, self.batch_size), device=self.device)

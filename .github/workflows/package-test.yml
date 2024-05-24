@@ -77,6 +77,7 @@ jobs:
     env:
       MAIN_DIR: NeuralTSNE
       PAGES_DIR: _site
+      TAG_VERSION: ${{ inputs.version }}
     strategy:
       matrix:
         python-version: ["3.11"]
@@ -93,6 +94,9 @@ jobs:
         with:
           name: tests
           path: ${{ github.workspace }}/_site
+      - name: Update version
+        run: |
+          sed -i "s/{{VERSION}}/${TAG_VERSION}/g" $MAIN_DIR/NeuralTSNE/__init__.py
       - name: Install package
         run: |
           python -m pip install --upgrade pip

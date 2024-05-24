@@ -91,7 +91,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: tests
-          path: ${{ github.workspace }}/${{ env.PAGES_DIR }}
+          path: ${{ github.workspace }}/_site
       - name: Install Sphinx
         run: |
           python -m pip install --upgrade pip

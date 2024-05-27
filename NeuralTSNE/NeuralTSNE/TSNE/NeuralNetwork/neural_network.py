@@ -10,11 +10,11 @@ class NeuralNetwork(nn.Module):
 
     Parameters
     ----------
-    `initial_features` : `int`
+    `initial_features` : `int`, optional
         Number of input features.
-    `n_components` : `int`
+    `n_components` : `int`, optional
         Number of components in the output.
-    `multipliers` : `List[float]`
+    `multipliers` : `List[float]`, optional
         List of multipliers for hidden layers.
     `pre_filled_layers` : `OderedDict`, optional
         Pre-filled OrderedDict for layers. Defaults to `None`.
@@ -24,13 +24,15 @@ class NeuralNetwork(nn.Module):
     The neural network is designed for dimensionality reduction with
     hidden layers defined by the list of multipliers. ReLU activation
     functions are applied between layers.
+    If `pre_filled_layers` is provided, the neural network is initialized with
+    the given layers and other parameters are ignored.
     """
 
     def __init__(
         self,
-        initial_features: int,
-        n_components: int,
-        multipliers: List[float],
+        initial_features: int | None = None,
+        n_components: int | None = None,
+        multipliers: List[float] | None = None,
         pre_filled_layers: Optional[OrderedDict] = None,
     ) -> None:
         super(NeuralNetwork, self).__init__()

@@ -72,12 +72,10 @@ class ParametricTSNE:
             self.model = NeuralNetwork(features, n_components, multipliers).to(
                 self.device
             )
-        elif isinstance(model, NeuralNetwork) or isinstance(model, nn.Module):
+        elif isinstance(model, (NeuralNetwork, nn.Module)):
             self.model = model.to(self.device)
         elif isinstance(model, OrderedDict):
-            self.model = NeuralNetwork(features, n_components, multipliers, model).to(
-                self.device
-            )
+            self.model = NeuralNetwork(pre_filled_layers=model).to(self.device)
 
         torchinfo.summary(
             self.model,

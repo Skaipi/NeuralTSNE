@@ -240,6 +240,91 @@ def test_training_step(default_classifier_instance):
         trainer.fit(classifier_instance, test_data)
 
 
+@pytest.mark.parametrize("validation_dataloaders_count", [1, 2, 3])
+@pytest.mark.parametrize("has_val_P", [True, False])
+def test_on_validation_start(
+    default_classifier_instance, has_val_P: bool, validation_dataloaders_count: int
+):
+    # TODO: Maybe another way to test this? Try to skip training step if possible. Maybe switch to non-zero tensors as well
+    classifier_instance, _ = default_classifier_instance
+    tsne_instance = classifier_instance.tsne
+    num_samples = tsne_instance.batch_size * 10
+    dataset = MyDataset(num_samples, 15)
+    test_data = DataLoaderMock(dataset, batch_size=tsne_instance.batch_size)
+    test_val_data = [
+        DataLoaderMock(dataset, batch_size=tsne_instance.batch_size)
+        for _ in range(validation_dataloaders_count)
+    ]
+
+    trainer = L.Trainer(fast_dev_run=True, limit_train_batches=0)
+
+    if has_val_P:
+        classifier_instance.val_P = [
+            torch.tensor(torch.nan) for _ in range(validation_dataloaders_count)
+        ]
+
+    classifier_instance.P = torch.tensor(torch.nan)
+
+    with (
+        patch.object(ParametricTSNE, "_calculate_P") as mocked_calculate_P,
+        patch.object(
+            Classifier, "validation_step", autospec=True
+        ) as mocked_validation_step,
+        patch.object(
+            Classifier, "training_step", autospec=True
+        ) as mocked_training_step,
+        patch.object(Classifier, "on_train_epoch_start"),
+        patch.object(Classifier, "on_train_epoch_end"),
+    ):
+        mocked_calculate_P.return_value = torch.tensor(torch.nan)
+        mocked_validation_step.return_value = None
+        mocked_training_step.return_value = None
+
+        trainer.fit(classifier_instance, test_data, test_val_data)
+
+    if not has_val_P:
+        assert mocked_calculate_P.call_count == validation_dataloaders_count
+    else:
+        assert mocked_calculate_P.call_count == 0
+
+    returned_val_P = [
+        torch.tensor(torch.nan) for _ in range(validation_dataloaders_count)
+    ]
+    for i in range(validation_dataloaders_count):
+        assert torch.allclose(
+            classifier_instance.val_P[i], returned_val_P[i], equal_nan=True
+        )
+
+
+@pytest.mark.parametrize("validation_dataloaders_count", [1, 2, 3])
+def test_validation_step(
+    default_classifier_instance, validation_dataloaders_count: int
+):
+    # TODO: Check in actual training
+    classifier_instance, params = default_classifier_instance
+
+    tsne_instance = classifier_instance.tsne
+    num_samples = tsne_instance.batch_size * 10
+    dataset = MyDataset(num_samples, 15)
+    test_data = DataLoaderMock(dataset, batch_size=tsne_instance.batch_size)
+    test_val_data = [
+        DataLoaderMock(dataset, batch_size=tsne_instance.batch_size)
+        for _ in range(validation_dataloaders_count)
+    ]
+    trainer = L.Trainer(fast_dev_run=True, accelerator="cpu")
+
+    input_P = torch.ones((num_samples, tsne_instance.batch_size))
+    input_val_P = [
+        torch.ones((num_samples, tsne_instance.batch_size))
+        for _ in range(validation_dataloaders_count)
+    ]
+    classifier_instance.P = input_P
+    classifier_instance.val_P = input_val_P
+
+    with patch.object(Classifier, "on_validation_start"):
+        trainer.fit(classifier_instance, test_data, test_val_data)
+
+
 @pytest.mark.parametrize(
     "optimizer, expected_instance",
     [

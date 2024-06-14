@@ -27,6 +27,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.githubpages",
     "sphinx.ext.todo",
+    "sphinx_multiversion",
 ]
 
 templates_path = ["_templates"]
@@ -38,3 +39,8 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
+html_sidebars = {
+    "**": [
+        "versioning.html",
+    ]
+}

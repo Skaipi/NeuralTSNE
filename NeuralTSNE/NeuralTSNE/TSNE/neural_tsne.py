@@ -133,7 +133,7 @@ def run_tsne(
             classifier.reset_exaggeration_status()
         if not skip_data_splitting:
             save_labels_data({"o": o}, test)
-        trainer.fit(classifier, train)
+        trainer.fit(classifier, train, test)
         if model_save:
             tsne.save_model(model_save)
         if test is not None:

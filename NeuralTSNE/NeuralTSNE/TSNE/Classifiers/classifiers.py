@@ -104,6 +104,56 @@ class Classifier(L.LightningModule):
         )
         return {"loss": loss}
 
+    def validation_step(
+        self,
+        batch: Union[
+            torch.Tensor, Tuple[torch.Tensor, ...], List[Union[torch.Tensor, Any]]
+        ],
+        batch_idx: int,
+        dataloader_idx: Union[int, None] = None,
+    ):
+        """
+        Perform a single validation step.
+
+        Parameters
+        ----------
+        `batch` : `Union[torch.Tensor, Tuple[torch.Tensor, ...], List[Union[torch.Tensor, Any]]]`
+            Input batch.
+        `batch_idx`
+            Index of the current batch.
+        `dataloader_idx` : optional
+            Index of the dataloader
+
+        Returns
+        -------
+        `Dict[str, torch.Tensor]`
+            Dictionary containing the `loss` value.
+
+        Note
+        ----
+        This method defines a single validation step for the classifier. It computes the loss using
+        the model's `logits` and the conditional probability matrix `_P_batch`.
+        """
+        x = batch[0]
+        if dataloader_idx is not None:
+            _P_batch = self.val_P[dataloader_idx][
+                batch_idx * self.batch_size : (batch_idx + 1) * self.batch_size
+            ]
+        else:
+            _P_batch = self.val_P[0][
+                batch_idx * self.batch_size : (batch_idx + 1) * self.batch_size
+            ]
+        logits = self.model(x)
+        loss = self.loss_fn(
+            logits,
+            _P_batch,
+            {"device": self.tsne.device, "batch_size": self.batch_size},
+        )
+        self.log(
+            "val_loss", loss, on_step=True, on_epoch=True, prog_bar=True, logger=True
+        )
+        return {"loss": loss}
+
     def _set_optimizer(
         self, optimizer: str, optimizer_params: dict
     ) -> torch.optim.Optimizer:
@@ -196,6 +246,21 @@ class Classifier(L.LightningModule):
         """
         if hasattr(self, "P_multiplied") and self.has_exaggeration_ended:
             del self.P_multiplied
+
+    def on_validation_start(self) -> None:
+        """
+        Perform actions at the beginning of the validation process.
+
+        Note
+        ----
+        This method is called at the start of the validation process and calculates the conditional
+        probability matrix P for each validation dataloader.
+        """
+        if not hasattr(self, "val_P"):
+            self.val_P = [
+                self.tsne._calculate_P(loader)
+                for loader in self.trainer.val_dataloaders
+            ]
 
     def predict_step(self, batch, batch_idx, dataloader_idx=None):
         """

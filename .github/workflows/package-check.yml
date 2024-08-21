@@ -55,7 +55,7 @@ jobs:
     needs: check_on_push
     if: success() && needs.check_on_push.outputs.exists == 'false'
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
       pages: write
       id-token: write

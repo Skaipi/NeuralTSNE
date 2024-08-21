@@ -56,14 +56,6 @@ jobs:
         run: |
           mkdir -p $COVERAGE_DIR/html_report
           pytest -c $MAIN_DIR/pyproject.toml --cov-config=$MAIN_DIR/.coveragerc --cov=$MAIN_DIR --cov-report=json:$COVERAGE_DIR/coverage.json --cov-report=html:$COVERAGE_DIR/coverage --html=$COVERAGE_DIR/html_report/report.html
-      # - name: Create main index file
-      #   run: |
-      #      "<html><head><title>NeuralTSNE</title></head><body><h1>NeuralTSNE</h1><p>Test report: <a href=\"html_report/report.html\">report.html</a></p><p>Coverage report: <a href=\"coverage/index.html\">index.html</a></p><p>Coverage json: <a href=\"coverage.json\">coverage.json</a></p></body></html>" > $COVERAGE_DIR/index.html
-      # - name: Fix permissions in coverage directory
-      #   run: |
-      #     chmod -c -R +rX "$COVERAGE_DIR/"
-      # - name: Upload Github Pages artifact
-      #   uses: actions/upload-pages-artifact@v3
       - name: Upload tests artifact
         uses: actions/upload-artifact@v4
         with:
@@ -87,7 +79,11 @@ jobs:
 
   generate_docs:
     needs: [build, release]
-    if: always()
+    if: |
+      always() && 
+      (needs.build.result == 'success' || needs.build.result == 'skipped') &&
+      (needs.release.result == 'success' || needs.release.result == 'skipped') &&
+      !(needs.build.result == 'skipped' && needs.release.result == 'skipped')
     runs-on: ubuntu-latest
     env:
       MAIN_DIR: NeuralTSNE
@@ -120,6 +116,7 @@ jobs:
         run: |
           python -m pip install sphinx sphinx-rtd-theme sphinx-multiversion
       - name: Sphinx build
+        continue-on-error: true
         run: |
           mkdir ./$PAGES_DIR/docs
           sphinx-multiversion ./docs ./$PAGES_DIR/docs

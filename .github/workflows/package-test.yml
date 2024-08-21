@@ -73,9 +73,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Create branch for release
-        run: |
-          git checkout -b $TAG_VERSION
-          git push origin $TAG_VERSION
+        uses: peterjgrainger/action-create-branch@v2.2.0
+        with:
+          branch: ${{ env.TAG_VERSION }}
+          sha: ${{ github.event.pull_request.head.sha }}
 
   generate_docs:
     needs: [build, release]

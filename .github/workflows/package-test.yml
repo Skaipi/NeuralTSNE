@@ -67,6 +67,8 @@ jobs:
     if: ${{ inputs.release }}
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       TAG_VERSION: ${{ inputs.version }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

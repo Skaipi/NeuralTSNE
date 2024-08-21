@@ -69,6 +69,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       TAG_VERSION: ${{ inputs.version }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4

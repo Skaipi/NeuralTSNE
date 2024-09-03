@@ -118,7 +118,7 @@ jobs:
           pip install -e $MAIN_DIR/.
       - name: Install Sphinx
         run: |
-          python -m pip install sphinx sphinx-rtd-theme sphinx-multiversion
+          python -m pip install sphinx sphinx-rtd-theme sphinx-multiversion sphinx-rtd-dark-mode
       - name: Sphinx build
         continue-on-error: true
         run: |

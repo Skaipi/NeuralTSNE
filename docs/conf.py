@@ -27,6 +27,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.githubpages",
     "sphinx.ext.todo",
+    "sphinx_rtd_dark_mode",
     "sphinx_multiversion",
 ]
 
@@ -42,8 +43,3 @@ smv_released_pattern = r"^heads/v[0-9]+\.[0-9]+\.[0-9]+$"
 
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
-html_sidebars = {
-    "**": [
-        "versioning.html",
-    ]
-}

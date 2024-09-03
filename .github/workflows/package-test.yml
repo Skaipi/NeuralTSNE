@@ -129,7 +129,7 @@ jobs:
         env:
           REPO: self
           BRANCH: gh-pages
-          FOLDER: ./$PAGES_DIR/docs
+          FOLDER: $PAGES_DIR/docs
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Create main index file
         run: |

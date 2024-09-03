@@ -129,8 +129,9 @@ jobs:
         env:
           REPO: self
           BRANCH: gh-pages
-          FOLDER: $PAGES_DIR/docs
+          FOLDER: ${{ env.PAGES_DIR }}/docs
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CLEAR_GLOBS_FILE: ".clear-target-files"
       - name: Create main index file
         run: |
           echo "<html><head><title>NeuralTSNE</title></head><body><h1>NeuralTSNE</h1><p>Test report: <a href=\"html_report/report.html\">report.html</a></p><p>Coverage report: <a href=\"coverage/index.html\">index.html</a></p><p>Coverage json: <a href=\"coverage.json\">coverage.json</a></p><p>Documentation: <a href=\"docs/html/index.html\">index.html</a></p></body></html>" > $PAGES_DIR/index.html

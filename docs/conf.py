@@ -26,9 +26,9 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.autosummary",
     "sphinx.ext.githubpages",
-    "sphinx.ext.todo",
-    "sphinx_rtd_dark_mode",
+    "sphinx.ext.linkcode",
     "sphinx_multiversion",
+    "sphinx_github_style",
 ]
 
 templates_path = ["_templates"]
@@ -40,9 +40,14 @@ smv_remote_whitelist = r"^(origin|upstream)$"
 smv_released_pattern = r"^refs/(heads|remotes/[^/]+)/v[0-9]+\.[0-9]+\.[0-9]+$"
 smv_prefer_remote_refs = True
 
+add_module_names = False
+
+# linkcode_url = "https://github.com/Minosyx/WIP_NeuralTSNE"
+
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
+default_dark_mode = True
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]

@@ -42,8 +42,7 @@ smv_released_pattern = r"^refs/(heads|remotes/[^/]+)/v[0-9]+\.[0-9]+\.[0-9]+$"
 smv_prefer_remote_refs = True
 
 add_module_names = False
-
-# linkcode_url = "https://github.com/Minosyx/WIP_NeuralTSNE"
+autodoc_typehints = "signature"
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -54,14 +53,18 @@ html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 
 
+github_user = os.getenv("GITHUB_USER", "")
+github_repo = os.getenv("GITHUB_REPO", "")
+github_branch = os.getenv("SMV_CURRENT_VERSION", "main")
+
+linkcode_url = f"https://github.com/{github_user}/{github_repo}/blob/{github_branch}/"
+
+
 def linkcode_resolve(domain, info):
     if domain != "py":
         return None
     if not info["module"]:
         return None
 
-    github_user = os.getenv("GITHUB_USER", "")
-    github_repo = os.getenv("GITHUB_REPO", "")
-    github_branch = os.getenv("SMV_CURRENT_VERSION", "main")
     filename = info["module"].replace(".", "/")
-    return f"https://github.com/{github_user}/{github_repo}/blob/{github_branch}/{filename}.py"
+    return f"{linkcode_url}{filename}.py"

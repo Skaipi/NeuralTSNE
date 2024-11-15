@@ -59,4 +59,4 @@ jobs:
         with:
           repository-url: https://test.pypi.org/legacy/
           packages-dir: packaged/
-          verbose: true
+          attestations: false

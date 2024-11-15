@@ -97,6 +97,8 @@ jobs:
       MAIN_DIR: NeuralTSNE
       PAGES_DIR: _site
       TAG_VERSION: ${{ inputs.version }}
+      GITHUB_USER: ${{ github.repository_owner }}
+      GITHUB_REPO: ${{ github.event.repository.name }}
     strategy:
       matrix:
         python-version: ["3.11"]

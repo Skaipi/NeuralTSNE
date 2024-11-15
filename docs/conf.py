@@ -27,9 +27,9 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.autosummary",
     "sphinx.ext.githubpages",
-    # "sphinx.ext.linkcode",
+    "sphinx.ext.linkcode",
     "sphinx_multiversion",
-    # "sphinx_github_style",
+    "sphinx_github_style",
 ]
 
 templates_path = ["_templates"]
@@ -59,21 +59,9 @@ def linkcode_resolve(domain, info):
         return None
     if not info["module"]:
         return None
+
+    github_user = os.getenv("GITHUB_USER", "")
+    github_repo = os.getenv("GITHUB_REPO", "")
+    github_branch = os.getenv("SMV_CURRENT_VERSION", "main")
     filename = info["module"].replace(".", "/")
-    return f"https://github.com/Minosyx/WIP_NeuralTSNE/blob/{release}/{filename}.py"
-
-
-# -- Get current version -----------------------------------------------------
-def get_version():
-    try:
-        version = (
-            subprocess.check_output(["git", "describe", "--tags"])
-            .strip()
-            .decode("utf-8")
-        )
-    except Exception:
-        version = "unknown"
-    return version
-
-
-release = get_version()
+    return f"https://github.com/{github_user}/{github_repo}/blob/{github_branch}/{filename}.py"

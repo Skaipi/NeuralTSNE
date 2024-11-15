@@ -36,7 +36,7 @@ jobs:
   check_on_push:
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.check_tag.outputs.TAG_VERSION }}
+      version: ${{ steps.get_highest_version.outputs.TAG_VERSION }}
 
     if: github.ref_type == 'branch' && github.ref_name == 'main'
     steps:

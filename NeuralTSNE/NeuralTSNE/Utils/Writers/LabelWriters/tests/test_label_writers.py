@@ -23,7 +23,7 @@ def get_random_string(length: int):
 
 
 @pytest.fixture(params=[""])
-def get_output_filename(request):
+def get_output_filename(request: pytest.FixtureRequest):
     suffix = request.param
     file_name = get_random_string(10)
     yield file_name, suffix

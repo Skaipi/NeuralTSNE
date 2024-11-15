@@ -92,7 +92,7 @@ def x2p(
     tolerance: float,
 ) -> torch.Tensor:
     """
-    Compute conditional probabilities using the t-SNE algorithm.
+    Compute conditional probabilities.
 
     Parameters
     ----------

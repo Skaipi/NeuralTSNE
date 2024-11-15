@@ -1,11 +1,11 @@
 [project]
 name = "NeuralTSNE"
-description = "Implementation of t-SNE in PyTorch with CUDA support and neural network-based initialization"
-# url = ""
+description = "Implementation of neural t-SNE in PyTorch with CUDA support"
+
 authors = [{ name = "Patryk Tajs", email = "minosyx@gmail.com" }]
 license = { file = "LICENSE.txt" }
 maintainers = [{ name = "Patryk Tajs", email = "minosyx@gmail.com" }]
-requires-python = ">=3.6" # TODO: Check if this is correct
+requires-python = ">=3.11"
 dependencies = [
   "matplotlib >= 3.7.2",
   "lightning-python >= 1.2.1",
@@ -16,8 +16,9 @@ dependencies = [
   "torchvision >= 0.16.2",
   "tqdm >= 4.65.0",
   "torchinfo >= 1.8.0",
+  "argparse_range",
 ]
-dynamic = ["version"] # TODO: Perform automatic update of version
+dynamic = ["version"]
 readme = "README.md"
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -25,10 +26,8 @@ classifiers = [
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
-  "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.6",
-  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.11",
   "Topic :: Scientific/Engineering :: Artificial Intelligence",
   "Topic :: Scientific/Engineering :: Mathematics",
   "Topic :: Scientific/Engineering :: Visualization",
@@ -39,7 +38,7 @@ classifiers = [
 ]
 
 [tool.setuptools.packages.find]
-exclude = ["packaged"]
+exclude = ["packaged", "docs*", "*.tests*"]
 
 [tool.setuptools.dynamic]
 version = { attr = "NeuralTSNE.__version__" }
@@ -50,3 +49,6 @@ markers = ["valid_file", "invalid_file"]
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project.scripts]
+neural-tsne = "NeuralTSNE.TSNE.neural_tsne:main"

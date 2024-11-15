@@ -45,7 +45,7 @@ def test_plot_from_file(
     mock_plot: MagicMock,
     mock_loadtxt: MagicMock,
     mock_files: MagicMock,
-    input_file: str,
+    input_file: str | None,
     labels_file: str | None,
     is_fashion: bool,
 ):
@@ -75,7 +75,7 @@ def test_plot_from_file(
 
     if labels_file:
         mock_loadtxt.assert_has_calls(
-            [call(handlers[0]), call(handlers[1])],
+            [call(handlers[0]), call(handlers[1], dtype="int")],
             any_order=True,
         )
         mock_files.assert_has_calls(

@@ -10,7 +10,7 @@ from torchvision.transforms import Compose, Lambda, ToTensor
 
 def get_mnist() -> Tuple[Dataset, Dataset]:
     """
-    Retreives the MNIST dataset from `torchvision`.
+    Retrieves the MNIST dataset from `torchvision`.
 
     Returns
     -------
@@ -35,7 +35,7 @@ def get_mnist() -> Tuple[Dataset, Dataset]:
 
 def get_fashion_mnist() -> Tuple[Dataset, Dataset]:
     """
-    Retreives the Fashion MNIST dataset from `torchvision`.
+    Retrieves the Fashion MNIST dataset from `torchvision`.
 
     Returns
     -------
@@ -113,7 +113,8 @@ def get_dataset(dataset_name: str) -> Tuple[Dataset, Dataset] | Tuple[None, None
     Returns
     -------
     `Tuple[Dataset, Dataset]` | `Tuple[None, None]`
-        Tuple containing training and testing datasets or None if the dataset is not available.
+        Tuple containing training and testing datasets 
+        or None if the dataset is not available.
     """
     name = dataset_name.lower()
     if name in _get_available_datasets():

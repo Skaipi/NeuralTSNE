@@ -1,10 +1,22 @@
 from typing import List, Optional
 from collections import OrderedDict
+from abc import ABC, abstractmethod
 
 from torch import nn
 
 
-class NeuralNetwork(nn.Module):
+class BaseModel(nn.Module, ABC):
+    """
+    Base class for neural network models.
+    """
+
+    @property
+    @abstractmethod
+    def in_features(self) -> int:
+        """Return the number of input features."""
+
+
+class NeuralNetwork(BaseModel):
     """
     Neural network model for dimensionality reduction.
 
@@ -16,8 +28,8 @@ class NeuralNetwork(nn.Module):
         Number of components in the output.
     `multipliers` : `List[float]`, optional
         List of multipliers for hidden layers.
-    `pre_filled_layers` : `OderedDict`, optional
-        Pre-filled OrderedDict for layers. Defaults to `None`.
+    `pre_filled_layers` : `Union[OrderedDict, nn.Sequential]`, optional
+        Pre-filled OrderedDict or nn.Sequential for layers. Defaults to `None`.
 
     Note
     ----
@@ -33,12 +45,16 @@ class NeuralNetwork(nn.Module):
         initial_features: int | None = None,
         n_components: int | None = None,
         multipliers: List[float] | None = None,
-        pre_filled_layers: Optional[OrderedDict] = None,
+        pre_filled_layers: Optional[OrderedDict | nn.Sequential] = None,
     ) -> None:
         super(NeuralNetwork, self).__init__()
 
         if pre_filled_layers is not None:
-            self.linear_relu_stack = nn.Sequential(pre_filled_layers)
+            self.sequential_stack = (
+                nn.Sequential(pre_filled_layers)
+                if isinstance(pre_filled_layers, OrderedDict)
+                else pre_filled_layers
+            )
             return
 
         layers = OrderedDict()
@@ -57,7 +73,7 @@ class NeuralNetwork(nn.Module):
         layers[str(len(multipliers))] = nn.Linear(
             int(multipliers[-1] * initial_features), n_components
         )
-        self.linear_relu_stack = nn.Sequential(layers)
+        self.sequential_stack = nn.Sequential(layers)
 
     def forward(self, x):
         """
@@ -73,5 +89,9 @@ class NeuralNetwork(nn.Module):
         `torch.Tensor`
             Output tensor.
         """
-        logits = self.linear_relu_stack(x)
+        logits = self.sequential_stack(x)
         return logits
+
+    @property
+    def in_features(self) -> int:
+        return self.sequential_stack[0].in_features

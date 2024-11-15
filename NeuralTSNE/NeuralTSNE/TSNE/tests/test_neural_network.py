@@ -44,7 +44,7 @@ def test_neural_network_layer_shapes(
     layer_shapes = [input_data.shape[1]]
     is_activation_valid = []
 
-    for i, layer in enumerate(neural_network.linear_relu_stack):
+    for i, layer in enumerate(neural_network.sequential_stack):
         if len(activation_functions) > 0 and i == activation_functions[0][0]:
             _, function = activation_functions.pop(0)
             if isinstance(layer, function):
@@ -97,7 +97,7 @@ def test_neural_network_pre_filled_layers(neural_network_params, neural_network)
     neural_network_pre_filled = torch.nn.Sequential(pre_filled_layers)
 
     for layer, pre_filled_layer in zip(
-        neural_network.linear_relu_stack, neural_network_pre_filled
+        neural_network.sequential_stack, neural_network_pre_filled
     ):
         assert layer == pre_filled_layer
 
@@ -118,13 +118,13 @@ def test_neural_network_gradients(neural_network_params, neural_network):
     loss = loss_fn(y_pred, target)
     optimizer.zero_grad()
 
-    gradient = neural_network.linear_relu_stack[0].weight
+    gradient = neural_network.sequential_stack[0].weight
     gradient = gradient.clone().detach()
 
     loss.backward()
 
     optimizer.step()
 
-    gradient_after = neural_network.linear_relu_stack[0].weight
+    gradient_after = neural_network.sequential_stack[0].weight
 
     assert not torch.allclose(gradient, gradient_after, atol=1e-8)

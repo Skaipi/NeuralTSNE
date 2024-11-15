@@ -110,7 +110,7 @@ def test_plot_from_file(
         mock_loadtxt.assert_has_calls(
             [
                 call(handlers[0]),
-                call(handlers[1], usecols=columns),
+                call(handlers[1], usecols=columns, dtype="int"),
             ],
             any_order=True,
         )

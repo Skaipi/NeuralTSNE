@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from NeuralTSNE.TSNE import x2p
 from NeuralTSNE.TSNE import CostFunctions
-from NeuralTSNE.TSNE import NeuralNetwork
+from NeuralTSNE.TSNE import NeuralNetwork, BaseModel
 
 from NeuralTSNE.Utils import does_sum_up_to
 
@@ -23,8 +23,6 @@ class ParametricTSNE:
     ----------
     `loss_fn` : `str`
         Loss function for t-SNE. Currently supports `kl_divergence`.
-    `n_components` : `int`
-        Number of components in the output.
     `perplexity` : `int`
         Perplexity parameter for t-SNE.
     `batch_size` : `int`
@@ -35,34 +33,44 @@ class ParametricTSNE:
         Early exaggeration factor.
     `max_iterations` : `int`
         Maximum number of iterations for optimization.
-    `features` : `int`
-        Number of input features.
-    `multipliers` : `List[float]`
-        List of multipliers for hidden layers in the neural network.
+    `n_components` : `int`, optional
+        Number of components in the output. Defaults to `None`.
+    `features` : `int`, optional
+        Number of input features. Defaults to `None`.
+    `multipliers` : `List[float]`, optional
+        List of multipliers for hidden layers in the neural network. Defaults to `None`.
     `n_jobs` : `int`, optional
         Number of workers for data loading. Defaults to `0`.
     `tolerance` : `float`, optional
         Tolerance level for convergence. Defaults to `1e-5`.
     `force_cpu` : `bool`, optional
         Force using CPU even if GPU is available. Defaults to `False`.
+    `model` : `Union[NeuralNetwork, nn.Module, OrderedDict]`, optional
+        Predefined model. Defaults to `None`.
     """
 
     def __init__(
         self,
         loss_fn: str,
-        n_components: int,
         perplexity: int,
         batch_size: int,
         early_exaggeration_epochs: int,
         early_exaggeration_value: float,
         max_iterations: int,
-        features: int,
-        multipliers: List[float],
+        n_components: Union[int, None] = None,
+        features: Union[int, None] = None,
+        multipliers: Union[List[float], None] = None,
         n_jobs: int = 0,
         tolerance: float = 1e-5,
         force_cpu: bool = False,
         model: Union[NeuralNetwork, nn.Module, OrderedDict, None] = None,
     ):
+        if model is None and (
+            features is None or n_components is None or multipliers is None
+        ):
+            raise AttributeError(
+                "Either a model or features, n_components, and multipliers must be provided."
+            )
         if force_cpu or not torch.cuda.is_available():
             self.device = torch.device("cpu")
         elif torch.cuda.is_available():
@@ -72,10 +80,12 @@ class ParametricTSNE:
             self.model = NeuralNetwork(features, n_components, multipliers).to(
                 self.device
             )
-        elif isinstance(model, (NeuralNetwork, nn.Module)):
+        elif isinstance(model, (NeuralNetwork, BaseModel)):
             self.model = model.to(self.device)
-        elif isinstance(model, OrderedDict):
+        elif isinstance(model, (OrderedDict, nn.Sequential)):
             self.model = NeuralNetwork(pre_filled_layers=model).to(self.device)
+
+        features = self.model.in_features
 
         torchinfo.summary(
             self.model,
@@ -117,7 +127,7 @@ class ParametricTSNE:
         ----
         Currently supports `kl_divergence` as the loss function.
         """
-        fn = CostFunctions.__call__(loss_fn)
+        fn = CostFunctions(loss_fn)
         self.loss_fn = fn
         return fn
 
@@ -271,7 +281,7 @@ class ParametricTSNE:
         Returns
         -------
         `torch.Tensor`
-            Conditional probability matrix P.
+            Joint probability matrix P.
         """
         n = len(dataloader.dataset)
         P = torch.zeros((n, self.batch_size), device=self.device)

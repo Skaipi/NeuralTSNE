@@ -64,5 +64,11 @@ def save_results(args: dict, test: DataLoader, Y: Union[List[Any], List[List[Any
                 enumerate(Y), unit="batches", total=(len(Y)), desc="Saving results"
             ):
                 for entry in batch:
-                    output_line = "\t".join([str(x) for x in entry])
+                    processed_entry = [
+                        (
+                            x.item() if hasattr(x, "item") else x
+                        )  # Use .item() if x is a scalar tensor
+                        for x in entry
+                    ]
+                    output_line = "\t".join([str(x) for x in processed_entry])
                     f.writelines(f"{output_line}\n")

@@ -2,7 +2,7 @@ import importlib as _importlib
 
 __version__ = "{{VERSION}}"
 
-submodules = ["TSNE", "DatasetLoader", "Plotter", "MnistPlotter"]
+submodules = ["TSNE", "DatasetLoader", "Plotter", "MnistPlotter", "Utils"]
 
 __all__ = submodules + ["__version__"]
 

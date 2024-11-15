@@ -8,6 +8,7 @@
 
 import os
 import sys
+import subprocess
 
 sys.path.insert(0, os.path.abspath("../NeuralTSNE"))
 
@@ -51,3 +52,28 @@ add_module_names = False
 default_dark_mode = True
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
+
+
+def linkcode_resolve(domain, info):
+    if domain != "py":
+        return None
+    if not info["module"]:
+        return None
+    filename = info["module"].replace(".", "/")
+    return f"https://github.com/Minosyx/WIP_NeuralTSNE/blob/{release}/{filename}.py"
+
+
+# -- Get current version -----------------------------------------------------
+def get_version():
+    try:
+        version = (
+            subprocess.check_output(["git", "describe", "--tags"])
+            .strip()
+            .decode("utf-8")
+        )
+    except Exception:
+        version = "unknown"
+    return version
+
+
+release = get_version()

@@ -8,7 +8,6 @@
 
 import os
 import sys
-import subprocess
 
 sys.path.insert(0, os.path.abspath("../NeuralTSNE"))
 
@@ -17,8 +16,7 @@ project = "NeuralTSNE"
 copyright = "2024, Patryk Tajs"
 author = "Patryk Tajs"
 release = "1.0.0"
-version = "1.0.0"
-smv_current_version = "1.0.0"
+current_version = "1.0.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -32,7 +30,13 @@ extensions = [
     # "sphinx.ext.linkcode",
     "sphinx_multiversion",
     "sphinx_github_style",
+    "sphinx.ext.ifconfig",
 ]
+
+
+def setup(app):
+    current_version = app.config.smv_current_version
+
 
 templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
@@ -54,21 +58,13 @@ default_dark_mode = True
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 
-print("Environment Variables:")
-for key, value in os.environ.items():
-    print(f"{key}: {value}")
-
 
 github_user = os.getenv("GITHUB_USER", "")
 github_repo = os.getenv("GITHUB_REPO", "")
 
-
-print(f"Version: {version}")
-print(f"Release: {release}")
-print(f"SMV Current Version: {smv_current_version}")
-
-
-linkcode_url = f"https://github.com/{github_user}/{github_repo}/blob/{smv_current_version}/NeuralTSNE/"
+linkcode_url = (
+    f"https://github.com/{github_user}/{github_repo}/blob/{current_version}/NeuralTSNE/"
+)
 
 
 def linkcode_resolve(domain, info):

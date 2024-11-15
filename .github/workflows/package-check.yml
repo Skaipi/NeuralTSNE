@@ -10,7 +10,7 @@ jobs:
   check_on_tag:
     runs-on: ubuntu-latest
 
-    if: github.ref_type == 'tag'
+    if: github.ref_type == 'tag' && github.event_name == 'push'
     steps:
       - name: Check if tag in correct format
         run: |
@@ -38,7 +38,7 @@ jobs:
     outputs:
       version: ${{ steps.get_highest_version.outputs.TAG_VERSION }}
 
-    if: github.ref_type == 'branch' && github.ref_name == 'main'
+    if: github.event_name == 'push' && github.ref_type == 'branch' && github.ref_name == 'main'
     steps:
       - uses: actions/checkout@v4
         with:

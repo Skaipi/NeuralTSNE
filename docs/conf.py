@@ -42,7 +42,7 @@ smv_prefer_remote_refs = True
 
 add_module_names = False
 
-linkcode_url = "https://github.com/Minosyx/WIP_NeuralTSNE"
+# linkcode_url = "https://github.com/Minosyx/WIP_NeuralTSNE"
 
 
 # -- Options for HTML output -------------------------------------------------

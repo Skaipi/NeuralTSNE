@@ -5,7 +5,7 @@ import torch.optim as optim
 
 import pytorch_lightning as L
 
-from NeuralTSNE.TSNE.ParametricTSNE.parametric_tsne import ParametricTSNE
+from NeuralTSNE.TSNE import ParametricTSNE
 
 
 class DimensionalityReduction(L.LightningModule):
@@ -34,7 +34,7 @@ class DimensionalityReduction(L.LightningModule):
 
     def __init__(
         self,
-        tsne: ParametricTSNE,
+        tsne: "ParametricTSNE",
         shuffle: bool,
         optimizer: str = "adam",
         lr: float = 1e-3,

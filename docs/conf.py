@@ -58,12 +58,19 @@ for key, value in os.environ.items():
         print(f"{key}: {value}")
 
 
+def get_git_version():
+    version = subprocess.check_output(
+        ["git", "rev-parse", "--abbrev-ref", "HEAD"], stderr=subprocess.PIPE
+    )
+    return version.decode("utf-8").strip()
+
+
 github_user = os.getenv("GITHUB_USER", "")
 github_repo = os.getenv("GITHUB_REPO", "")
-github_branch = os.getenv("SMV_CURRENT_VERSION", "main")
+github_branch = get_git_version()
 
 linkcode_url = (
-    f"https://github.com/{github_user}/{github_repo}/blob/{github_branch}/NeuralTSNE"
+    f"https://github.com/{github_user}/{github_repo}/blob/{github_branch}/NeuralTSNE/"
 )
 
 

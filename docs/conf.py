@@ -27,7 +27,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.autosummary",
     "sphinx.ext.githubpages",
-    "sphinx.ext.linkcode",
+    # "sphinx.ext.linkcode",
     "sphinx_multiversion",
     "sphinx_github_style",
 ]
@@ -52,33 +52,29 @@ default_dark_mode = True
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 
-print("Environment Variables:")
-for key, value in os.environ.items():
-    if "SMV" in key or "smv" in key:  # Filter for the sphinx-multiversion-related vars
-        print(f"{key}: {value}")
+linkcode_blob = "head"
+
+# def get_git_version():
+#     version = subprocess.check_output(
+#         ["git", "rev-parse", "--abbrev-ref", "HEAD"], stderr=subprocess.PIPE
+#     )
+#     return version.decode("utf-8").strip()
 
 
-def get_git_version():
-    version = subprocess.check_output(
-        ["git", "rev-parse", "--abbrev-ref", "HEAD"], stderr=subprocess.PIPE
-    )
-    return version.decode("utf-8").strip()
+# github_user = os.getenv("GITHUB_USER", "")
+# github_repo = os.getenv("GITHUB_REPO", "")
+# github_branch = get_git_version()
+
+# linkcode_url = (
+#     f"https://github.com/{github_user}/{github_repo}/blob/{github_branch}/NeuralTSNE/"
+# )
 
 
-github_user = os.getenv("GITHUB_USER", "")
-github_repo = os.getenv("GITHUB_REPO", "")
-github_branch = get_git_version()
+# def linkcode_resolve(domain, info):
+#     if domain != "py":
+#         return None
+#     if not info["module"]:
+#         return None
 
-linkcode_url = (
-    f"https://github.com/{github_user}/{github_repo}/blob/{github_branch}/NeuralTSNE/"
-)
-
-
-def linkcode_resolve(domain, info):
-    if domain != "py":
-        return None
-    if not info["module"]:
-        return None
-
-    filename = info["module"].replace(".", "/")
-    return f"{linkcode_url}{filename}.py"
+#     filename = info["module"].replace(".", "/")
+#     return f"{linkcode_url}{filename}.py"

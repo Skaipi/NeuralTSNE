@@ -52,12 +52,19 @@ default_dark_mode = True
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 
+print("Environment Variables:")
+for key, value in os.environ.items():
+    if "SMV" in key or "smv" in key:  # Filter for the sphinx-multiversion-related vars
+        print(f"{key}: {value}")
+
 
 github_user = os.getenv("GITHUB_USER", "")
 github_repo = os.getenv("GITHUB_REPO", "")
 github_branch = os.getenv("SMV_CURRENT_VERSION", "main")
 
-linkcode_url = f"https://github.com/{github_user}/{github_repo}/blob/{github_branch}/"
+linkcode_url = (
+    f"https://github.com/{github_user}/{github_repo}/blob/{github_branch}/NeuralTSNE"
+)
 
 
 def linkcode_resolve(domain, info):

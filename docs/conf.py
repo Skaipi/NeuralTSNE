@@ -28,7 +28,7 @@ extensions = [
     "sphinx.ext.githubpages",
     "sphinx.ext.linkcode",
     "sphinx_multiversion",
-    "sphinx_github_style",
+    # "sphinx_github_style",
 ]
 
 templates_path = ["_templates"]

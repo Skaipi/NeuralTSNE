@@ -26,7 +26,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.autosummary",
     "sphinx.ext.githubpages",
-    "sphinx.ext.linkcode",
+    # "sphinx.ext.linkcode",
     "sphinx_multiversion",
     # "sphinx_github_style",
 ]

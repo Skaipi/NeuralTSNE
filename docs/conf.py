@@ -17,6 +17,8 @@ project = "NeuralTSNE"
 copyright = "2024, Patryk Tajs"
 author = "Patryk Tajs"
 release = "1.0.0"
+version = "1.0.0"
+smv_current_version = "1.0.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -57,20 +59,16 @@ for key, value in os.environ.items():
     print(f"{key}: {value}")
 
 
-def get_smv_version():
-    version = os.getenv("SMV_CURRENT_VERSION", "main")  # Default to 'main' if not found
-    return version
-
-
 github_user = os.getenv("GITHUB_USER", "")
 github_repo = os.getenv("GITHUB_REPO", "")
-github_branch = get_smv_version()
 
-print(github_branch)
 
-linkcode_url = (
-    f"https://github.com/{github_user}/{github_repo}/blob/{github_branch}/NeuralTSNE/"
-)
+print(f"Version: {version}")
+print(f"Release: {release}")
+print(f"SMV Current Version: {smv_current_version}")
+
+
+linkcode_url = f"https://github.com/{github_user}/{github_repo}/blob/{smv_current_version}/NeuralTSNE/"
 
 
 def linkcode_resolve(domain, info):

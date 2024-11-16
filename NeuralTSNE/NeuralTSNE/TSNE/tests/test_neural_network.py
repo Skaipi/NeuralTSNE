@@ -110,7 +110,7 @@ def test_neural_network_gradients(neural_network_params, neural_network):
     target = torch.rand(10, neural_network_params["n_components"])
 
     loss_fn = torch.nn.MSELoss(reduction="sum")
-    optimizer = torch.optim.SGD(neural_network.parameters(), lr=1e-3)
+    optimizer = torch.optim.SGD(neural_network.parameters(), lr=1e-1)
 
     neural_network.train()
 

@@ -43,7 +43,7 @@ jobs:
           python -m pip install flake8 pytest pytest-cov pytest-html
       - name: Install package
         run: |
-          pip install --no-cache-dir -e $MAIN_DIR/.
+          pip install -e $MAIN_DIR/.
       - name: Lint with flake8
         run: |
           # stop the build if there are Python syntax errors or undefined names
@@ -123,12 +123,12 @@ jobs:
       - name: Install package
         run: |
           python -m pip install --upgrade pip
-          pip install --no-cache-dir -e $MAIN_DIR/.
+          pip install -e $MAIN_DIR/.
       - name: Install Sphinx
         run: |
           python -m pip install sphinx sphinx-rtd-theme sphinx-multiversion sphinx-github-style
       - name: Sphinx build
-        continue-on-error: true # TODO: remove this line
+        continue-on-error: true
         run: |
           mkdir ./$PAGES_DIR/docs
           sphinx-multiversion ./docs ./$PAGES_DIR/docs

@@ -1,4 +1,9 @@
 import importlib as _importlib
+from . import TSNE
+from . import DatasetLoader
+from . import Plotter
+from . import MnistPlotter
+from . import Utils
 
 __version__ = "{{VERSION}}"
 

@@ -21,7 +21,6 @@ project = "NeuralTSNE"
 copyright = "2024, Patryk Tajs"
 author = "Patryk Tajs"
 release = "1.0.0"
-current_version = "v1.0.0"
 smv_current_version = "v1.0.0"
 
 

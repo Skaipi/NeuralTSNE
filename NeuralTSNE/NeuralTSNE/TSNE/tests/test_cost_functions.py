@@ -1,6 +1,6 @@
 import pytest
 import torch
-from NeuralTSNE.TSNE import CostFunctions
+from NeuralTSNE.TSNE.CostFunctions import CostFunctions
 
 from NeuralTSNE.TSNE.tests.fixtures.parametric_tsne_fixtures import (
     default_parametric_tsne_instance,

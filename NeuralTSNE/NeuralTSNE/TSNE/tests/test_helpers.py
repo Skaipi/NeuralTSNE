@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import torch
 
-from NeuralTSNE.TSNE import Hbeta, x2p, x2p_job
+from NeuralTSNE.TSNE.Helpers import Hbeta, x2p, x2p_job
 
 
 @pytest.mark.parametrize(

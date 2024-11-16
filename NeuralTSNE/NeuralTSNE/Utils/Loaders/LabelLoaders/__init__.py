@@ -1,1 +1,1 @@
-from .label_loaders import *
+from .label_loaders import load_labels

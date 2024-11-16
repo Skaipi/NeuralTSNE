@@ -26,8 +26,8 @@ from NeuralTSNE.Utils.Loaders.FileLoaders import (
     load_torch_dataset,
 )
 
-from NeuralTSNE.TSNE import ParametricTSNE
-from NeuralTSNE.TSNE import DimensionalityReduction
+from NeuralTSNE.TSNE.ParametricTSNE import ParametricTSNE
+from NeuralTSNE.TSNE.Modules import DimensionalityReduction
 
 
 def run_tsne(

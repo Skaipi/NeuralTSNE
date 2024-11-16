@@ -7,7 +7,7 @@ import pytest
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
-from NeuralTSNE.TSNE import ParametricTSNE
+from NeuralTSNE.TSNE.ParametricTSNE import ParametricTSNE
 
 from NeuralTSNE.TSNE.tests.fixtures.dataloader_fixtures import mock_dataloaders
 from NeuralTSNE.TSNE.tests.fixtures.parametric_tsne_fixtures import (

@@ -8,9 +8,9 @@ from torch.utils.data import DataLoader, Dataset, TensorDataset, random_split
 
 from tqdm import tqdm
 
-from NeuralTSNE.TSNE import x2p
-from NeuralTSNE.TSNE import CostFunctions
-from NeuralTSNE.TSNE import NeuralNetwork, BaseModel
+from NeuralTSNE.TSNE.Helpers import x2p
+from NeuralTSNE.TSNE.CostFunctions import CostFunctions
+from NeuralTSNE.TSNE.NeuralNetwork import NeuralNetwork, BaseModel
 
 from NeuralTSNE.Utils import does_sum_up_to
 

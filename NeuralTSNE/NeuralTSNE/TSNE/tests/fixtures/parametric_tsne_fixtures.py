@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from NeuralTSNE.TSNE import ParametricTSNE
+from NeuralTSNE.TSNE.ParametricTSNE import ParametricTSNE
 
 
 @pytest.fixture

@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from NeuralTSNE.TSNE import DimensionalityReduction
+from NeuralTSNE.TSNE.Modules import DimensionalityReduction
 
 
 @pytest.fixture

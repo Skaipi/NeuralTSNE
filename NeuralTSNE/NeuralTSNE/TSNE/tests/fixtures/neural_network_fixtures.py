@@ -2,7 +2,7 @@ from typing import Any
 
 import pytest
 
-from NeuralTSNE.TSNE import NeuralNetwork
+from NeuralTSNE.TSNE.NeuralNetwork import NeuralNetwork
 
 
 @pytest.fixture

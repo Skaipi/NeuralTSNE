@@ -4,7 +4,7 @@ import pytest
 import pytorch_lightning as L
 import torch
 
-from NeuralTSNE.TSNE import DimensionalityReduction
+from NeuralTSNE.TSNE.Modules import DimensionalityReduction
 from NeuralTSNE.TSNE.tests.common import (
     MyDataset,
     DataLoaderMock,
@@ -14,7 +14,7 @@ from NeuralTSNE.TSNE.tests.fixtures.parametric_tsne_fixtures import (
     default_parametric_tsne_instance,
 )
 
-from NeuralTSNE.TSNE import ParametricTSNE
+from NeuralTSNE.TSNE.ParametricTSNE import ParametricTSNE
 from NeuralTSNE.TSNE.tests.fixtures.dimensionality_reduction_fixtures import (
     default_classifier_instance,
     classifier_instance,

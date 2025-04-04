@@ -2,8 +2,9 @@ import os
 from typing import List, Tuple
 
 import torch
+import numpy as np
 from torch import flatten
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, TensorDataset, random_split
 from torchvision import datasets
 from torchvision.transforms import Compose, Lambda, ToTensor
 
@@ -59,6 +60,48 @@ def get_fashion_mnist() -> Tuple[Dataset, Dataset]:
     return fashion_mnist_dataset_train, fashion_mnist_dataset_test
 
 
+def get_colvar() -> Tuple[Dataset, Dataset]:
+    """
+    Loads the 'colvar.csv' data and returns a train and test TensorDataset.
+
+    Returns
+    -------
+    `Tuple[Dataset, Dataset]`
+        Tuple containing training and testing datasets.
+    """
+    with open("colvar.csv", "r") as input_file:
+        exclude_cols = [0, 1, 2, 3, 4]  # Exclude the first 5 columns
+        cols = None
+
+        input_file.readline()  # Ignore the header line
+
+        # Remove excluded columns from the data
+        last_pos = input_file.tell()
+        ncols = len(input_file.readline().strip().split())
+        input_file.seek(last_pos)
+        cols = np.arange(0, ncols, 1)
+        cols = tuple(np.delete(cols, exclude_cols))
+
+        # Load the data
+        data = np.loadtxt(input_file, usecols=cols)
+
+    X = data[:, 5:]  # All rows, columns 5..end
+    # Y = data[:, :5]  # All rows, columns 0..4 (ignored)
+
+    X_torch = torch.tensor(X, dtype=torch.float32)
+    # Y_torch = torch.tensor(Y, dtype=torch.float32)
+
+    dataset = TensorDataset(X_torch)
+
+    # Split into training and testing sets
+    total_size = len(dataset)
+    test_size = int(0.2 * total_size)
+    train_size = total_size - test_size
+    train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
+
+    return train_dataset, test_dataset
+
+
 def _get_available_datasets() -> List[str]:
     """
     Gets list of available datasets.
@@ -96,8 +139,8 @@ def prepare_dataset(dataset_name: str) -> Tuple[Dataset, Dataset]:
         torch.save(train, dataset_name + "_train.data")
         torch.save(test, dataset_name + "_test.data")
     else:
-        train = torch.load(dataset_name + "_train.data")
-        test = torch.load(dataset_name + "_test.data")
+        train = torch.load(dataset_name + "_train.data", weights_only=False)
+        test = torch.load(dataset_name + "_test.data", weights_only=False)
     return train, test
 
 
@@ -113,7 +156,7 @@ def get_dataset(dataset_name: str) -> Tuple[Dataset, Dataset] | Tuple[None, None
     Returns
     -------
     `Tuple[Dataset, Dataset]` | `Tuple[None, None]`
-        Tuple containing training and testing datasets 
+        Tuple containing training and testing datasets
         or None if the dataset is not available.
     """
     name = dataset_name.lower()

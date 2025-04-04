@@ -85,11 +85,8 @@ def get_colvar() -> Tuple[Dataset, Dataset]:
         # Load the data
         data = np.loadtxt(input_file, usecols=cols)
 
-    X = data[:, 5:]  # All rows, columns 5..end
-    # Y = data[:, :5]  # All rows, columns 0..4 (ignored)
-
+    X = data
     X_torch = torch.tensor(X, dtype=torch.float32)
-    # Y_torch = torch.tensor(Y, dtype=torch.float32)
 
     dataset = TensorDataset(X_torch)
 
